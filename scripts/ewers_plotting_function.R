@@ -85,4 +85,25 @@ pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T)
 ewers_data(staple = staple_data, pop = pop_data, start = 1990, end = 2008)  
 
 
+# Old data cleaning function
+
+#  staple_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
+#    dplyr::filter(Area.Code < 1000) %>% 
+#    dplyr::filter(Item =="Apples"| Item == "Barley"| Item ==  "Bananas"| Item == "Cassava"| Item == "Coconuts"| Item ==  "Cottonseed"| 
+#                    Item ==  "Grapes"| Item ==  "Maize"| Item ==  "Millet"| Item == "Oats"| Item ==  "Onions| Item ==  dry"| Item ==  "Oil palm fruit"| 
+#                    Item ==  "Plantains"| Item ==  "Potatoes"| Item ==  "Rice, paddy"| Item ==  "Sorghum"| 
+#                    Item == "Soybeans"| Item ==  "Sugar beet"| Item ==  "Sugar cane"| Item ==  "Sunflower seed"| Item ==  "Sweet potatoes"| 
+#                    Item ==  "Vegetables, fresh nes"| Item == "Wheat"| Item ==  "Yams") %>% 
+#    dplyr::filter(Element != "Production") 
+#  names(staple_data) = gsub(pattern = "Y", replacement = "", x = names(staple_data))
+#  staple_data_clean <- staple_data
+#  
+#  write.csv(staple_data_clean, "../data/staple_data_clean.csv")
+#  
+#  pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T) %>% 
+#    dplyr::mutate(Population = Value*1000) %>% 
+#    dplyr::select(Area,Population,Year)
+#  names(pop_data) <- as.character(names(pop_data))
+#  pop_data_clean <- pop_data
+#  write.csv(pop_data_clean, "../data/pop_data_clean.csv")
 
