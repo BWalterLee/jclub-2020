@@ -14,6 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r packages, include = F}
 library(tidyverse)
+library(knitr)
+library(kableExtra)
 ```
 
 #### Read in Data
@@ -22,7 +24,7 @@ library(tidyverse)
  
  Below analyses are currently for 1999-2018
 
-```{r Initial Data read-in}
+```{r Initial Data read-in, include = F}
 
 staple_data <- read.csv("../data/fao_staples.csv", sep = ",", header = T) %>% 
   filter(Year == 1999 | Year == 2018)
@@ -45,14 +47,15 @@ pc.area.dif <- pc.area.tall %>%
   group_by(Area) %>% 
   dplyr::summarise(total.1999 = sum(x1999), total.2018 = sum(x2018)) %>% 
   dplyr::mutate(log.delta.area = log(total.2018 / total.1999)) %>% 
-  dplyr::mutate(dir = if_else(log.delta.area >= 0, "+", "-")) %>% 
+  dplyr::mutate(dir.area = if_else(log.delta.area >= 0, "pos", "neg")) %>% 
   dplyr::select(-total.1999,-total.2018)
 
-pc.area.dif
 ```
-This shows the values and directionality for the change in cropland area for the same 23 staple crops analyzed in Ewers 2009.  In this case, these values represent the Y-axis of Fig. 2 from that paper. Notably, some of the values are quite extreme comparatively, with nearly twice as much cropland area per capita lost as compare to the 1979-1999 period. This is in line with overall cropland area estimates though.
 
-```{r yield ratio calculation}
+
+
+
+```{r yield ratio calculation, include = F}
 yield <- staple_data %>% filter(Element == "Yield") %>% 
   dplyr::select(Area,Item,Year,Unit,Value) 
 
@@ -85,23 +88,32 @@ kcal.yield.dif <- kcal.ha %>%
   group_by(Area) %>% 
   dplyr::summarise(total.1999 = sum(kcal.ha.1999), total.2018 = sum(kcal.ha.2018)) %>% 
   dplyr::mutate(log.delta.yield = log(total.2018 / total.1999)) %>% 
-  dplyr::mutate(dir.1 = if_else(log.delta.yield >= 0, "+", "-")) %>% 
-  dplyr::select(Area,log.delta.yield,dir.1)
-kcal.yield.dif
+  dplyr::mutate(dir.yield = if_else(log.delta.yield >= 0, "pos", "neg")) %>% 
+  dplyr::select(Area,log.delta.yield,dir.yield)
 ```
-In this case, the yield values are quite similar to those from Ewers.  It's possible that kcal yield per hectare for these staples hasn't changed much since 1999, but let's visualize these together in a format similar to Ewers Figure 2.
 
+
+The table below shows the values for the change in per capita cropland area and yield for the same 23 staple crops analyzed in Ewers 2009.  In this case, these "log.delta.area" represent the Y-axis of Fig. 2 from that paper, with "log.delta.yield" as the X. Notably, some of the Y values are quite extreme comparatively, with nearly twice as much cropland area per capita lost as compare to the 1979-1999 period shown in Ewers. This is in line with overall cropland area estimates that Rob showed though. "Dir" here just shows whether each value is positive or negative, though it was useful to look at overall relationships.
 ```{r}
 combined_data <- left_join(pc.area.dif,kcal.yield.dif) 
-head(combined_data)
 
+scroll_box(
+  kable(combined_data, 
+        caption = "Per capita changes in cropland area and yield for 23 staple crops (1999:2018)") %>% kable_styling(),
+  height = "700px",
+  width = "800px")
+
+```
+
+
+In this case, the yield values are quite similar to those from Ewers.  It's possible that kcal yield per hectare for these staples hasn't changed much since 1999, but let's visualize these together in a format similar to Ewers Figure 2.
+```{r}
 ggplot(data = combined_data, mapping = aes(x = log.delta.yield, y = log.delta.area)) + theme_classic() +
          geom_point() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + geom_smooth(method = "lm") + xlim(-.6,1.5)+
   ylim(-3.5,1.5) + labs(x = "log(yield ratio 1999:2018)", y = "log(per capita cropland ratio 1999:2018)")
-
 ```
 
-The models from Ewers are pretty simple, so we can look at the relationship too. 
+The models from Ewers were pretty simple, so we can look at the relationship too. 
 
 ```{r}
 model <- lm(log.delta.area ~ log.delta.yield, data = combined_data)
@@ -204,5 +216,7 @@ ewers_data(staple = staple_data, pop = pop_data, start = 2000, end = 2010)
 # 2008 to 2018
 ewers_data(staple = staple_data, pop = pop_data, start = 2008, end = 2018) 
 ```
+
+Just did 10 year periods here, since the difference values change size depending on the total number of years compared (expectedly, as trends continue over time). We can easily adjust periods to fit times of interest, and compare decades or some other unit.
 
 My guess is there are likely several agroecological factors we could look into that may explain some of the variance among countries. 
