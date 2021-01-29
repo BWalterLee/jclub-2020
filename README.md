@@ -1,8 +1,8 @@
 # jclub-2020
 Repo of data, analysis, and plots from WSU Ento Journal Club 2020-21 
 
-Still disorganized, but will be writing generalized functions to sort and gather FAO and Worldbank data, and plot and model preliminary results.
+** Scripts for plotting and analysis are in the "scripts" folder ** 
 
-Contains data on several metrics of urbanization for all countries available.
+If you want to replicate any of the plots or analyses, download this entire folder and set the working directory to "Source File Location". If working within the folder, then data should be pulled from the "data" folder automatically. 
 
-Contains a simple function for cleaning up World Bank downloaded csv files for easy analysis.
+Journal club folks, if you have trouble accessing any of this stuff or any questions feel free to email me at benjamin.w.lee@wsu.edu 
