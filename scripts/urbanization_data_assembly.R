@@ -3,6 +3,7 @@
 #  All data sourced from World Bank
 #     https://data.worldbank.org/topic/urban-development 
 
+library(tidyverse)
 
 # This Script covers all 
 # Data Cleaning and Organization after import of CSVs from worldbank.org 
