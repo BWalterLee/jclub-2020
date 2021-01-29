@@ -75,12 +75,14 @@ plot <- ggplot(data = combined_data, mapping = aes(x = log.delta.yield, y = log.
   geom_point() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + geom_smooth(method = "lm") + xlim(-.6,1.5)+
   ylim(-3.5,1.5) + labs(x = "log(yield ratio)", y = "log(per capita cropland ratio)", title = paste(as.character(start),"to",as.character(end)))
 
-  return(paste("data", as.character(start),"-", as.character(end)))
+  return(plot)
 }
 
 staple_data <- staple_data <- read.csv("../data/fao_staples.csv", sep = ",", header = T) 
 pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T)
-ewers_data(staple = staple_data, pop = pop_data,start = 1990, end = 2018)  
+
+
+ewers_data(staple = staple_data, pop = pop_data, start = 1990, end = 2008)  
 
 
 
