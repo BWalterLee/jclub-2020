@@ -1,46 +1,117 @@
+# Last Update 2/5/2021
 
-library(rlang)
+# New function updates for additional data inputs. 
+
+# Addition of "X" and "Y" for axis plots, given same calculation (kind of) for both...
+# 
+
+# New Function:
+# Data must be "fao_composite_tall.csv" to run
+# X and Y can currently be:
+#      -"tonnes_nitrogen"      (ag use only)
+#      -"import_value_usd"     (ag products only)
+#      -"export_value_usd"     (ag products only)
+#      -"total_ag_value_pin"   (PIN is FAO "Production Index Number")
+#      -"kcal.ha.tot"          (still from only staple crops)
+#      -"area.tot"             (still from only staple crops)
+#
+#    All values are calculated per capita following Ewers 2009
+#    New values can be added as needed
+#
+#    Example calculation is below this function
+
 library(tidyverse)
-ewers_data <- function(staple,pop,start,end){
+
+ewers_plot_all <- function(data, X, Y, start,end){
   
-staple_data <- staple %>% 
-    filter(Year == start | Year == end)
-pop_data <- pop %>%
-    filter(Year == start | Year == end) %>% 
-    dplyr::mutate(Population = Value*1000) %>% 
-    dplyr::select(Area,Population,Year)
+  start.lab = as.name(paste("x",as.character(start),sep = ""))
+  end.lab = as.name(paste("x",as.character(end),sep = ""))
+  x.lab = as.name(X)
+  y.lab = as.name(Y)
+  #
+  # Cut data for years and variables only, adjust for per capita
+  data_cut = data %>% 
+    dplyr::filter(Year == start | Year == end) %>% 
+    dplyr::select(Area,Year,Population,!!X,!!Y) %>% 
+    dplyr::filter(!is.na(!!x.lab) & !is.na(!!y.lab)) %>% 
+    dplyr::mutate(x_percap = !!x.lab/Population, y_percap = !!y.lab/Population) %>% 
+    dplyr::select(Area,Year,x_percap,y_percap) %>% 
+    pivot_wider(names_from = Year, values_from = c(x_percap,y_percap)) %>% 
+    dplyr::mutate(x_dif = !!as.name(paste("x_percap_",as.character(end), sep = "")) / !!as.name(paste("x_percap_",as.character(start), sep = "")),
+                  y_dif = !!as.name(paste("y_percap_",as.character(end), sep = "")) / !!as.name(paste("y_percap_",as.character(start), sep = "")),
+                  log.x.dif = log(x_dif),
+                  log.y.dif = log(y_dif)) %>% 
+    dplyr::filter(!is.na(log.x.dif) & !is.na(log.y.dif))
+    
+
+  plot <- ggplot(data = data_cut, mapping = aes(x = log.x.dif, y = log.y.dif)) + theme_classic() +
+    geom_point() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + geom_smooth(method = "lm")  + labs(x = x.lab, y = y.lab, title = paste(as.character(start),"to",as.character(end), "n = ", as.character(nrow(data_cut)) ))
   
-  
-pc.area <- left_join(staple_data %>% filter(Element == "Area harvested"),pop_data) %>% 
-  dplyr::mutate(ha_percap = Value/Population)%>% 
-  dplyr::select(Area,Item,Year,ha_percap) 
+  return(plot)
+}
 
-pc.area
-# Separating out values by year for comparison
+# Example Calculation
+fao_composite_tall = read.csv("../data/fao_composite_tall.csv", header = T, sep = ",")
+
+nitro_value_8090 <- ewers_plot_all(data = fao_composite_tall, 
+               X = "tonnes_nitrogen",
+               Y = "total_ag_value_pin",
+               start = 1980,
+               end = 1990)
+
+nitro_value_9000 <- ewers_plot_all(data = fao_composite_tall, 
+                               X = "tonnes_nitrogen",
+                               Y = "total_ag_value_pin",
+                               start = 1990,
+                               end = 2000)
+
+nitro_value_0010 <- ewers_plot_all(data = fao_composite_tall, 
+                               X = "tonnes_nitrogen",
+                               Y = "total_ag_value_pin",
+                               start = 2000,
+                               end = 2010)
+
+nitro_value_1018 <- ewers_plot_all(data = fao_composite_tall, 
+                               X = "tonnes_nitrogen",
+                               Y = "total_ag_value_pin",
+                               start = 2010,
+                               end = 2018)
+
+library(ggpubr)
+ggarrange(nitro_value_8090,nitro_value_9000,nitro_value_0010,nitro_value_1018, ncol = 2,nrow =2)
 
 
-start.lab = as.name(paste("x",as.character(start),sep = ""))
-end.lab = as.name(paste("x",as.character(end),sep = ""))
 
-pc.area.tall <- pivot_wider(pc.area, names_from = Year, values_from = ha_percap, names_prefix = "x") %>% 
-  dplyr::filter(!is.na(!!start.lab) & !is.na(!!end.lab) &  !!start.lab != 0 & !!end.lab !=0) 
-pc.area.tall
-# Calculation on log(percap cropland ratio end: start) according to Ewers 2009
-pc.area.dif <- pc.area.tall %>% 
-  group_by(Area) %>% 
-  dplyr::summarise(total.start = sum(!!start.lab), total.end = sum(!!end.lab)) %>%          # Fix specification of column names here dude wow
-  dplyr::mutate(log.delta.area = log(total.end / total.start)) %>%  
-  dplyr::mutate(dir = if_else(log.delta.area >= 0, "+", "-")) %>% 
-  dplyr::select(-total.start,-total.end)
 
-yield <- staple_data %>% filter(Element == "Yield") %>% 
-  dplyr::select(Area,Item,Year,Unit,Value) 
+ewers_plot_all(data = fao_composite_tall, 
+               X = "tonnes_nitrogen",
+               Y = "total_ag_value_pin",
+               start = 1980,
+               end = 19)
 
-yield.tall <- pivot_wider(yield, names_from = Year, values_from = Value, names_prefix = "x") %>% 
-  dplyr::filter(!is.na(!!start.lab) & !is.na(!!end.lab) &  !!start.lab != 0 & !!end.lab !=0) 
 
-# Manually creating calorie list because no tables exist :(
-# Stolen from https://iopscience.iop.org/1748-9326/8/3/034015/media/erl472821suppdata.pdf 
+# IGNORE ####
+
+# Initial Joining of Data to single Sheet ####
+
+# Previously Adapted Values
+staple_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Area.Code < 1000) %>% 
+  dplyr::filter(Item =="Apples"| Item == "Barley"| Item ==  "Bananas"| Item == "Cassava"| Item == "Coconuts"| Item ==  "Cottonseed"| 
+                  Item ==  "Grapes"| Item ==  "Maize"| Item ==  "Millet"| Item == "Oats"| Item ==  "Onions| Item ==  dry"| Item ==  "Oil palm fruit"| 
+                  Item ==  "Plantains"| Item ==  "Potatoes"| Item ==  "Rice, paddy"| Item ==  "Sorghum"| 
+                  Item == "Soybeans"| Item ==  "Sugar beet"| Item ==  "Sugar cane"| Item ==  "Sunflower seed"| Item ==  "Sweet potatoes"| 
+                  Item ==  "Vegetables, fresh nes"| Item == "Wheat"| Item ==  "Yams") %>% 
+  dplyr::filter(Element != "Production") 
+names(staple_data) = gsub(pattern = "Y", replacement = "", x = names(staple_data))
+staple_data_clean <- staple_data
+area.tall <- pivot_longer(data = staple_data_clean %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area")%>% 
+  dplyr::select(Area, Item, Year,area)
+area.tall$Year <- as.numeric(area.tall$Year)
+head(area.tall)
+
+yield.tall <- pivot_longer(data = staple_data_clean %>% filter(Element == "Yield"),cols = 8:66, names_to = "Year", values_to = "yield") 
+yield.tall$Year <- as.numeric(yield.tall$Year)
 
 kcal = data.frame(c("Apples","Barley", "Bananas","Cassava","Coconuts", "Cottonseed", "Grapes", "Maize", "Millet",
                     "Oats", "Onions, dry", "Oil palm fruit", "Plantains", "Potatoes", "Rice, paddy", "Sorghum",
@@ -56,54 +127,59 @@ kcal <- kcal %>%
 # write.csv(kcal, "../data/kcal_staple.csv") # NEVER AGAIN
 
 # Conversion
-kcal.ha <- left_join(yield.tall,kcal %>% 
-  dplyr::select(Item,kcal.hg)) %>% 
-  dplyr::mutate(kcal.ha.start = !!start.lab*kcal.hg, kcal.ha.end = !!end.lab*kcal.hg) %>% 
-  dplyr::select(Area, Item, kcal.ha.start, kcal.ha.end) %>% 
-  dplyr::filter(!is.na(kcal.ha.start) & !is.na(kcal.ha.end))
+kcal.ha <- left_join(yield.tall,kcal %>% dplyr::select(Item,kcal.hg)) %>% 
+  dplyr::mutate(kcal.ha.cap = yield*kcal.hg) %>% 
+  dplyr::select(Area, Item, Year,kcal.ha.cap) %>% 
+  dplyr::filter(!is.na(kcal.ha.cap) )
+View(kcal.ha)
+# Load and Clean Pop data
+pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T) %>% 
+  dplyr::mutate(Population = Value*1000) %>% 
+  dplyr::select(Area,Population,Year)
+str(pop_data_clean)
+names(pop_data) <- as.character(names(pop_data))
+pop_data_clean <- pop_data
 
-kcal.yield.dif <- kcal.ha %>% 
-  group_by(Area) %>% 
-  dplyr::summarise(total.start = sum(kcal.ha.start), total.end = sum(kcal.ha.end)) %>% 
-  dplyr::mutate(log.delta.yield = log(total.end / total.start)) %>% 
-  dplyr::mutate(dir.1 = if_else(log.delta.yield >= 0, "+", "-")) %>% 
-  dplyr::select(Area,log.delta.yield,dir.1)
-
-combined_data <- left_join(pc.area.dif,kcal.yield.dif) 
-
-plot <- ggplot(data = combined_data, mapping = aes(x = log.delta.yield, y = log.delta.area)) + theme_classic() +
-  geom_point() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + geom_smooth(method = "lm") + xlim(-.6,1.5)+
-  ylim(-3.5,1.5) + labs(x = "log(yield ratio)", y = "log(per capita cropland ratio)", title = paste(as.character(start),"to",as.character(end)))
-
-  return(plot)
-}
-
-staple_data <- staple_data <- read.csv("../data/fao_staples.csv", sep = ",", header = T) 
-pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T)
+# Data Split by Staple
+split_data <- left_join(area.tall,kcal.ha) 
+str(kcal.ha)
+# Summed by Year 
+area_yield_data <- split_data %>% 
+  group_by(Area,Year) %>% 
+  dplyr::summarise(kcal.ha.tot = mean(kcal.ha.cap),
+                   area.tot = mean(area))
 
 
-ewers_data(staple = staple_data, pop = pop_data, start = 1990, end = 2008)  
+#####################
+# New Values
+nitrogen_data <- read.csv("../data/fao_nitrogen.csv", sep = ",", header = T) %>% 
+  dplyr::mutate(tonnes_nitrogen = Value) %>% 
+  dplyr::select(Area,tonnes_nitrogen,Year)
+head(nitrogen_data)
+
+imp_data <- read.csv("../data/fao_imp_exp.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Element == "Import Value") %>% 
+  dplyr::mutate(import_value_usd = Value*1000) %>% 
+  dplyr::select(Area,import_value_usd,Year)
+
+exp_data <- read.csv("../data/fao_imp_exp.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Element == "Export Value") %>% 
+  dplyr::mutate(export_value_usd = Value*1000) %>% 
+  dplyr::select(Area,export_value_usd,Year)
+
+ag_value_data <- read.csv("../data/fao_ag_value.csv", sep = ",", header =T)%>% 
+  dplyr::mutate(total_ag_value_pin = Value) %>% 
+  dplyr::select(Area,total_ag_value_pin,Year)
+
+fao_composite_tall <- left_join(pop_data_clean,nitrogen_data) %>% 
+  left_join(.,imp_data) %>% 
+  left_join(.,exp_data) %>% 
+  left_join(.,ag_value_data) %>% 
+  left_join(.,area_yield_data)
+
+write.csv(fao_composite_tall, "../data/fao_composite_tall.csv")
 
 
-# Old data cleaning function
 
-#  staple_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
-#    dplyr::filter(Area.Code < 1000) %>% 
-#    dplyr::filter(Item =="Apples"| Item == "Barley"| Item ==  "Bananas"| Item == "Cassava"| Item == "Coconuts"| Item ==  "Cottonseed"| 
-#                    Item ==  "Grapes"| Item ==  "Maize"| Item ==  "Millet"| Item == "Oats"| Item ==  "Onions| Item ==  dry"| Item ==  "Oil palm fruit"| 
-#                    Item ==  "Plantains"| Item ==  "Potatoes"| Item ==  "Rice, paddy"| Item ==  "Sorghum"| 
-#                    Item == "Soybeans"| Item ==  "Sugar beet"| Item ==  "Sugar cane"| Item ==  "Sunflower seed"| Item ==  "Sweet potatoes"| 
-#                    Item ==  "Vegetables, fresh nes"| Item == "Wheat"| Item ==  "Yams") %>% 
-#    dplyr::filter(Element != "Production") 
-#  names(staple_data) = gsub(pattern = "Y", replacement = "", x = names(staple_data))
-#  staple_data_clean <- staple_data
-#  
-#  write.csv(staple_data_clean, "../data/staple_data_clean.csv")
-#  
-#  pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T) %>% 
-#    dplyr::mutate(Population = Value*1000) %>% 
-#    dplyr::select(Area,Population,Year)
-#  names(pop_data) <- as.character(names(pop_data))
-#  pop_data_clean <- pop_data
-#  write.csv(pop_data_clean, "../data/pop_data_clean.csv")
+
 
