@@ -4,9 +4,9 @@ Repo of data, analysis, and plots from WSU Ento Journal Club 2020-21
 ** Scripts for plotting and analysis are in the "scripts" folder ** 
 
 ### What can changes in global agricultural practices and production tell us about how efficiently land has been used? 
-#### What environmental and socioeconomic factors might be influencing trends in agriculture, and what makes countries successful at conserving land?
+#### - What environmental and socioeconomic factors might be influencing trends in agriculture, and what makes countries successful at conserving land?
 
-
+#### Global Trends in Per-capita Nitrogen Fertilizer Applications and Value of Agricultural Production across decades. 
 ![Example Nitrogen Figure](/value_by_nitrogen.png)
 
 
