@@ -5,8 +5,9 @@
 library(tidyverse)
 library(ggpubr)
 
+
 # Run this function
-ewers_plot_all <- function(data, X, Y,Z, start,end){
+ewers_plot_all <- function(data, X, Y, Z, start, end, facet= NA){
   
   start.lab = as.name(paste("x",as.character(start),sep = ""))
   end.lab = as.name(paste("x",as.character(end),sep = ""))
@@ -39,15 +40,26 @@ ewers_plot_all <- function(data, X, Y,Z, start,end){
   
   #lm.coef = round(as.data.frame(coef(lm))[2,1],digits = 3)
   
-  plot <- ggplot(data = data_cut, mapping = aes(x = log.x.dif, y = log.y.dif, color = log.z.dif)) + theme_classic() +
+  merge_set <- data %>% 
+    dplyr::select(2,14,16,17) %>% 
+    distinct(.)
+  data_cut_facet <- left_join(data_cut,merge_set) %>% 
+    dplyr::filter(!is.na(.[,14:16])& .[14:16] != "N/A")
+ 
+  
+  plot <- ggplot(data = data_cut_facet, mapping = aes(x = log.x.dif, y = log.y.dif, color = log.z.dif)) + theme_classic() +
     geom_text(aes(label = Area), size = 3.5 ) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
     geom_smooth(method = "lm")  + 
     labs(x = x.lab, y = y.lab, title = paste(as.character(start),"to",as.character(end), "n = ", as.character(nrow(data_cut))), color = z.lab) +
     scale_color_viridis_c(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom")
   # plot.coef <- ggplot(data = data_cut, mapping = aes(x = log.x.dif, y = log.y.dif)) + theme_classic() +
   # geom_point() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + geom_smooth(method = "lm")  + labs(x = x.lab, y = y.lab, title = paste(as.character(start),"to",as.character(end), "n = ", as.character(nrow(data_cut)), "coef =", as.character(lm.coef)) )
-  
-  return(plot)
+
+  plot <- plot + 
+    {if(!is.na(facet)) facet_wrap(facet)
+    }
+   
+return(plot)
   # if_else(is.na(lm.coef), return(plot),return(plot.coef))
 }
 
@@ -68,6 +80,10 @@ fao_composite_tall = read.csv("../data/fao_composite_tall.csv", header = T, sep 
 #      -"tonnes_pest_total"    (pesticide use for agriculture per capita)
 #      -"for_invest_usd"       (Foreign investment in agriculture per capita)
 #      -"CO2_eq_emissions"     (CO2 equivalent emissions per capita)
+#
+#     Added the option to add a faceting factor to compare by country characteristics
+#     Default is set to NA, but can set facet= "HDI", "Developed", or "Continent" 
+#        Sometimes makes the plots more difficult to interpret, but cool over some time periods!
 
 # For Example, here is change in caloric yield per capita on the X axis, 
 #                      change in cropland area per capita on the Y axis (same as Ewers),
@@ -77,8 +93,16 @@ ewers_plot_all(data = fao_composite_tall,
                       X = "kcal.ha.tot",
                       Y = "area.tot",
                       Z = "tonnes_nitrogen",
-                      start = 2010,
-                      end = 2017)
+                      start = 2000,
+                      end = 2010)
+
+# Example including facet
+ewers_plot_all(data = fao_composite_tall, 
+               X = "kcal.ha.tot",
+               Y = "area.tot",
+               Z = "tonnes_nitrogen",
+               start = 2000,
+               end = 2010, facet = "HDI")
 
 # Feel free to try your own years by plugging into the template below! 
 #      Some years may cause an error if there are too many NA's for the Z value
