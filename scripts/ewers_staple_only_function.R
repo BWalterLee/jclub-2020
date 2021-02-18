@@ -96,7 +96,7 @@ end.lab = as.name(paste("x",as.character(end),sep = ""))
   
   plot <- ggplot(data = combined_data, mapping = aes(x = log.delta.yield, y = log.delta.area)) + theme_classic() +
     geom_point() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + geom_smooth(method = "lm") + xlim(-.6,1.5)+
-    ylim(-3.5,1.5) + labs(x = "log(yield ratio)", y = "log(per capita cropland ratio)", title = paste(as.character(start),"to",as.character(end)))
+    ylim(-3.5,1.5) + labs(x = "log(yield ratio)", y = "log(per capita cropland ratio)", title = paste(as.character(start),"to",as.character(end),"n = ", as.character(nrow(combined_data))))
   
   return(plot)
 }
@@ -123,9 +123,11 @@ pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T) %>%
 names(pop_data) <- as.character(names(pop_data))
 pop_data_clean <- pop_data
 
+View(staple_data_clean)
+View(pop_data_clean)
 
 # Running Function
-ewers_plot(staple = staple_data_clean, pop = pop_data_clean, start = 1979, end = 2018)
+ewers_plot(staple = staple_data_clean, pop = pop_data_clean, start = 1979, end = 1999)
 
 # Function for Data exporting
 # The function
@@ -208,6 +210,7 @@ ewers_data <- function(staple,pop,start,end){
 
 
 data_79_99 <- ewers_data(staple = staple_data_clean, pop = pop_data_clean, start = 1979, end = 1999)
+View(data_79_99)
 lm_79_99 <- lm(log.delta.area ~ log.delta.yield, data = data_79_99)
 summary(lm_79_99)
 
