@@ -1,18 +1,17 @@
-# Last Update 2/12/2021
+# Last Update 2/20/2021
 
+
+# Issue with missing data has been solved
+# data_organization_script.R updated to ignore na for crop types
+# fao_composite_tall.csv is now updated
 
 # Install these packages
 library(tidyverse)
 library(ggpubr)
 
-# Ben's test conditions for figure out wtf is going on
-data = fao_composite_tall
-X = "kcal.ha.avg"
-Y = "area.tot"
-Z = "tonnes_nitrogen"
-start = 1979
-end = 1999
-facet = NA
+
+
+
 # Run this function
 ewers_plot_all <- function(data, X, Y, Z, start, end, facet= NA){
   
