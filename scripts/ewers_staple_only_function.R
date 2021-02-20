@@ -1,4 +1,4 @@
-# New plotting function
+# Older x~y plotting function
 
 # Updated 1/29/2021 to include all available years.
 
@@ -7,17 +7,9 @@
 
 
 
-#  Extra investigations (interaction terms)
-# - Percent Undernourishment
-# - Fertilizer addition
-# - Value of Exports/Imports per capita
-# - Gross production value
-# - 
-# - 
-# - 
-
 library(rlang)
 library(tidyverse)
+
 
 # The function
 ewers_plot <- function(staple,pop,start,end){
@@ -74,7 +66,7 @@ end.lab = as.name(paste("x",as.character(end),sep = ""))
   kcal.ha <- left_join(yield.tall,kcal %>% dplyr::select(Item,kcal.hg)) %>% 
     dplyr::mutate(kcal.ha.cap = yield*kcal.hg) %>% 
     dplyr::select(Area, Item, Year,kcal.ha.cap) %>% 
-    dplyr::filter(!is.na(kcal.ha.cap) )
+    dplyr::filter(!is.na(kcal.ha.cap))
   
   # Pick Years
   kcal.ha.start.end <- kcal.ha %>% 
@@ -93,9 +85,9 @@ end.lab = as.name(paste("x",as.character(end),sep = ""))
   #
   
   combined_data <- left_join(pc.area.dif,kcal.yield.dif) 
-  
+ 
   plot <- ggplot(data = combined_data, mapping = aes(x = log.delta.yield, y = log.delta.area)) + theme_classic() +
-    geom_point() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + geom_smooth(method = "lm") + xlim(-.6,1.5)+
+    geom_text(aes(label = Area)) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + geom_smooth(method = "lm") + xlim(-.6,1.5)+
     ylim(-3.5,1.5) + labs(x = "log(yield ratio)", y = "log(per capita cropland ratio)", title = paste(as.character(start),"to",as.character(end),"n = ", as.character(nrow(combined_data))))
   
   return(plot)
@@ -123,13 +115,22 @@ pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T) %>%
 names(pop_data) <- as.character(names(pop_data))
 pop_data_clean <- pop_data
 
-View(staple_data_clean)
-View(pop_data_clean)
+
+
+
 
 # Running Function
 ewers_plot(staple = staple_data_clean, pop = pop_data_clean, start = 1979, end = 1999)
 
-# Function for Data exporting
+
+
+
+
+
+
+
+
+# Function just for Data exporting
 # The function
 ewers_data <- function(staple,pop,start,end){
   

@@ -1,5 +1,6 @@
 # Full FAO Data Assembly to create fao_composite_tall.csv for use in function
 
+# SOLVED PROBLEM WITH MISSING COUNTRIES
 
 staple_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
   dplyr::filter(Area.Code < 1000) %>% 
@@ -30,7 +31,7 @@ kcal = data.frame(c("Apples","Barley", "Bananas","Cassava","Coconuts", "Cottonse
 colnames(kcal) = c("Item", "kcal.tonne")
 kcal <- kcal %>% 
   dplyr::mutate(kcal.hg = kcal.tonne/10000)
-# write.csv(kcal, "../data/kcal_staple.csv") # NEVER AGAIN
+# write.csv(kcal, "../data/kcal_staple.csv") # NEVER AGAN
 
 # Conversion
 kcal.ha <- left_join(yield.tall,kcal %>% dplyr::select(Item,kcal.hg)) %>% 
@@ -47,18 +48,23 @@ names(pop_data) <- as.character(names(pop_data))
 pop_data_clean <- pop_data
 
 # Data Split by Staple
-split_data <- left_join(area.tall,kcal.ha) 
+split_data <- left_join(area.tall,kcal.ha)  # THE PROBLEM IS HERE SOMEWHERE. CREATING NA FOR NO REASON.
 str(kcal.ha)
 View(split_data)
 # Summed by Year 
 area_yield_data <- split_data %>% 
   mutate(kcal.total = area*kcal.per.ha) %>% 
   group_by(Area,Year) %>% 
-  dplyr::summarise(kcal.produced.tot = sum(kcal.total),
-                   area.tot = sum(area)) %>% 
+  dplyr::summarise(kcal.produced.tot = sum(kcal.total,na.rm = T),
+                   area.tot = sum(area,na.rm = T)) %>% 
   mutate(kcal.ha.avg = kcal.produced.tot / area.tot) %>% 
   dplyr::select(-kcal.produced.tot)
+
+
 View(area_yield_data)
+View(area_yield_data %>% 
+       group_by(Area) %>% 
+       summarize(test = sum(kcal.ha.avg)))
 
 #####################
 # New Values

@@ -4,13 +4,15 @@
 # Install these packages
 library(tidyverse)
 library(ggpubr)
+
+# Ben's test conditions for figure out wtf is going on
 data = fao_composite_tall
 X = "kcal.ha.avg"
 Y = "area.tot"
 Z = "tonnes_nitrogen"
 start = 1979
 end = 1999
-
+facet = NA
 # Run this function
 ewers_plot_all <- function(data, X, Y, Z, start, end, facet= NA){
   
@@ -22,12 +24,12 @@ ewers_plot_all <- function(data, X, Y, Z, start, end, facet= NA){
   #
   # Cut data for years and variables only, adjust for per capita
   data_cut = data %>% 
-    dplyr::filter(Year == start | Year == end) %>% 
-    dplyr::select(Area,Year,Population,!!X,!!Y, !!Z) %>% 
-    dplyr::filter(!is.na(!!x.lab) & !is.na(!!y.lab)) %>% 
-    dplyr::mutate(x_percap = !!x.lab, y_percap = !!y.lab/Population, z_percap = !!z.lab/Population) %>% 
-    dplyr::select(Area,Year,x_percap,y_percap,z_percap) %>% 
-    pivot_wider(names_from = Year, values_from = c(x_percap,y_percap,z_percap)) %>% 
+    dplyr::select(Area,Year,Population,!!X,!!Y, !!Z) %>%                      # grab only relevant data
+    dplyr::filter(!is.na(!!x.lab) & !is.na(!!y.lab)) %>%   # filters out missing values
+    dplyr::filter(Year == start | Year == end) %>%                            # Select Years
+    dplyr::mutate(x_percap = !!x.lab, y_percap = !!y.lab/Population, z_percap = !!z.lab/Population) %>% #Note that X here now is not per-capita
+    dplyr::select(Area,Year,x_percap,y_percap,z_percap)%>% 
+    pivot_wider(names_from = Year, values_from = c(x_percap,y_percap,z_percap))  %>% 
     dplyr::mutate(x_dif = !!as.name(paste("x_percap_",as.character(end), sep = "")) / !!as.name(paste("x_percap_",as.character(start), sep = "")),
                   y_dif = !!as.name(paste("y_percap_",as.character(end), sep = "")) / !!as.name(paste("y_percap_",as.character(start), sep = "")),
                   z_dif = !!as.name(paste("z_percap_",as.character(end), sep = "")) / !!as.name(paste("z_percap_",as.character(start), sep = "")))
@@ -44,13 +46,13 @@ ewers_plot_all <- function(data, X, Y, Z, start, end, facet= NA){
   #lm = lm(log.y.dif ~ log.x.dif, data = data_cut)
   
   #lm.coef = round(as.data.frame(coef(lm))[2,1],digits = 3)
- 
+ head(data)
   merge_set <- data %>% 
-    dplyr::select(3,15,17,18) %>% 
+    dplyr::select(2,14,16,17) %>% 
     distinct(.)
  
   data_cut_facet <- left_join(data_cut,merge_set) %>% 
-    dplyr::filter(!is.na(.[,14:16])& .[14:16] != "N/A")
+    dplyr::filter(!is.na(.[,14:16]) & .[14:16] != "N/A")
  
   
   plot <- ggplot(data = data_cut_facet, mapping = aes(x = log.x.dif, y = log.y.dif, color = log.z.dif)) + theme_classic() +
@@ -100,15 +102,17 @@ ewers_plot_all(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam")
                       Y = "area.tot",
                       Z = "tonnes_nitrogen",
                       start = 1979,
-                      end = 1999)
+                      end = 1999, facet = "HDI")
 
+
+View(fao_composite_tall %>% filter(Continent == "Europe"))
 # Example including facet
 ewers_plot_all(data = fao_composite_tall, 
-               X = "kcal.ha.tot",
+               X = "kcal.ha.avg",
                Y = "area.tot",
                Z = "tonnes_nitrogen",
                start = 1979,
-               end = 1999, facet = "HDI")
+               end = 1999, facet = "Continent")
 
 # Feel free to try your own years by plugging into the template below! 
 #      Some years may cause an error if there are too many NA's for the Z value
@@ -122,11 +126,11 @@ ewers_plot_all(data = fao_composite_tall,
 
 # Examples from powerpoint
 fao_composite_tall$HDI <- factor(fao_composite_tall$HDI,levels = c("Low","Medium", "High", "Very high"))
-ewers_plot_all(data = fao_composite_tall %>% filter(Area != "Marshall Islands"), 
-               X = "kcal.ha.tot",
+ewers_plot_all(data = fao_composite_tall %>% filter(Area != "Marshall Islands", Area != "Maldives"), 
+               X = "kcal.ha.avg",
                Y = "area.tot",
-               Z = "CO2_eq_emissions",
-               start = 2010,
-               end = 2017)
+               Z = "tonnes_pest_total",
+               start = 2005,
+               end = 2010)
 
 
