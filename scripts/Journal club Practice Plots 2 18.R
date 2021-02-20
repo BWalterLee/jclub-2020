@@ -96,12 +96,22 @@ fao_composite_tall = read.csv("../data/fao_composite_tall.csv", header = T, sep 
 #                      change in cropland area per capita on the Y axis (same as Ewers),
 #                 and tonnes of nitrogen fertilizer added to fields per capita as the color scale 
 #                 from years 2010 to 2017. 
-ewers_plot_all(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam"), 
+ewers_nitro <- ewers_plot_all(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam"), 
                       X = "kcal.ha.avg",
                       Y = "area.tot",
                       Z = "tonnes_nitrogen",
                       start = 1979,
-                      end = 1999, facet = "HDI")
+                      end = 1999)
+
+ewers_nitro_facet <- ewers_plot_all(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam"), 
+                              X = "kcal.ha.avg",
+                              Y = "area.tot",
+                              Z = "tonnes_nitrogen",
+                              start = 1979,
+                              end = 1999, facet = "HDI")
+
+ggsave("../Figures/Ewers_nitro_final.png", ewers_nitro, width = 10.5, height = 8)
+ggsave("../Figures/Ewers_nitro_final_facet.png", ewers_nitro_facet, width = 12, height = 9)
 
 
 View(fao_composite_tall %>% filter(Continent == "Europe"))
