@@ -115,15 +115,17 @@ ggsave("../Figures/Ewers_nitro_final_facet.png", ewers_nitro_facet, width = 12, 
 
 
 View(fao_composite_tall %>% filter(Continent == "Europe"))
+
 # Example including facet
 ewers_plot_all(data = fao_composite_tall, 
                X = "kcal.ha.avg",
                Y = "area.tot",
                Z = "tonnes_nitrogen",
-               start = 1979,
-               end = 1999, facet = "Continent")
+               start = 1997,
+               end = 2017,
+               facet = "Continent")
 
-# Feel free to try your own years by plugging into the template below! 
+e# Feel free to try your own years by plugging into the template below! 
 #      Some years may cause an error if there are too many NA's for the Z value
 ewers_plot_all(data = fao_composite_tall, 
                X = "",
