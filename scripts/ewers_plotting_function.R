@@ -154,13 +154,9 @@ staple_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = 
                   Item == "Soybeans"| Item ==  "Sugar beet"| Item ==  "Sugar cane"| Item ==  "Sunflower seed"| Item ==  "Sweet potatoes"| 
                   Item ==  "Vegetables, fresh nes"| Item == "Wheat"| Item ==  "Yams") %>% 
   dplyr::filter(Element != "Production") 
-
 names(staple_data) = gsub(pattern = "Y", replacement = "", x = names(staple_data))
-
 staple_data_clean <- staple_data
-
-area.tall <- pivot_longer(data = staple_data_clean 
-                          %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area")%>% 
+area.tall <- pivot_longer(data = staple_data_clean %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area")%>% 
   dplyr::select(Area, Item, Year,area)
 area.tall$Year <- as.numeric(area.tall$Year)
 head(area.tall)
@@ -183,15 +179,15 @@ kcal <- kcal %>%
 
 # Conversion
 kcal.ha <- left_join(yield.tall,kcal %>% dplyr::select(Item,kcal.hg)) %>% 
-  dplyr::mutate(kcal.ha = yield*kcal.hg) %>% 
-  dplyr::select(Area, Item, Year,kcal.ha) %>% 
-  dplyr::filter(!is.na(kcal.ha) )
+  dplyr::mutate(kcal.ha.cap = yield*kcal.hg) %>% 
+  dplyr::select(Area, Item, Year,kcal.ha.cap) %>% 
+  dplyr::filter(!is.na(kcal.ha.cap) )
 View(kcal.ha)
 # Load and Clean Pop data
 pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T) %>% 
   dplyr::mutate(Population = Value*1000) %>% 
   dplyr::select(Area,Population,Year)
-
+str(pop_data_clean)
 names(pop_data) <- as.character(names(pop_data))
 pop_data_clean <- pop_data
 
@@ -201,9 +197,9 @@ str(kcal.ha)
 # Summed by Year 
 area_yield_data <- split_data %>% 
   group_by(Area,Year) %>% 
-  dplyr::summarise(kcal.ha.tot = sum(kcal.ha),
-                   area.tot = sum(area))
-area_yield_data
+  dplyr::summarise(kcal.ha.tot = mean(kcal.ha.cap),
+                   area.tot = mean(area))
+
 
 #####################
 # New Values
@@ -240,9 +236,6 @@ emissions_data <- read.csv("../data/fao_emissions.csv", sep = ",", header =T)%>%
   dplyr::select(Area,CO2_eq_emissions,Year)
 
 
-mergeset <- read.csv("../data/mergeset.csv", sep = ",", header = T) %>% 
-  dplyr::select(1,2,4,5)
-head(mergeset)
 
 fao_composite_tall <- left_join(pop_data_clean,nitrogen_data) %>% 
   left_join(.,imp_data) %>% 
@@ -251,11 +244,10 @@ fao_composite_tall <- left_join(pop_data_clean,nitrogen_data) %>%
   left_join(.,area_yield_data) %>% 
   left_join(.,pest_total_data) %>% 
   left_join(.,for_invest_data) %>% 
-  left_join(.,emissions_data) %>% 
-  left_join(.,mergeset)
+  left_join(.,emissions_data)
 View(fao_composite_tall)
 write.csv(fao_composite_tall, "../data/fao_composite_tall.csv")
-View(fao_composite_tall)
+
 
 
 

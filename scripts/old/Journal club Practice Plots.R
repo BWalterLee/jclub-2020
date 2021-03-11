@@ -1,6 +1,4 @@
-# Last Update 2/17/2021
-
-# Fixed Z-axis scaling issue
+# Last Update 2/12/2021
 
 
 # Install these packages
@@ -68,7 +66,6 @@ return(plot)
 # Load this data, was attached to email
 fao_composite_tall = read.csv("../data/fao_composite_tall.csv", header = T, sep = ",")
 
-str(fao_composite_tall)
 # Now you can use this function to visualize any trend you want from the time period 1979-2018,
 #  though some data will be missing from those time periods. 
 
@@ -96,14 +93,8 @@ ewers_plot_all(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam")
                       X = "kcal.ha.avg",
                       Y = "area.tot",
                       Z = "tonnes_nitrogen",
-<<<<<<< HEAD:scripts/Journal club Practice Plots.R
-                      start = 2000,
-                      end = 2017)
-
-=======
                       start = 1979,
                       end = 1999)
->>>>>>> 467e78fdba4f16fffa9cf0dd51357030a595abf0:scripts/old/Journal club Practice Plots.R
 
 # Example including facet
 ewers_plot_all(data = fao_composite_tall, 
@@ -123,25 +114,6 @@ ewers_plot_all(data = fao_composite_tall,
                end = )
 
 
-<<<<<<< HEAD:scripts/Journal club Practice Plots.R
-# New for Tob
-
-na <- ewers_plot_all(data = fao_composite_tall, 
-               X = "kcal.ha.tot",
-               Y = "area.tot",
-               Z = "tonnes_nitrogen",
-               start = 1979,
-               end = 1999)
-
-na_f <- ewers_plot_all(data = fao_composite_tall, 
-               X = "kcal.ha.tot",
-               Y = "area.tot",
-               Z = "tonnes_nitrogen",
-               start = 1979,
-               end = 1999, facet = "HDI")
-ggsave("../Figures/na7999.png", na)
-ggsave("../Figures/na7999_facet.png", na_f, width = 12, height = 9)
-=======
 # Examples from powerpoint
 fao_composite_tall$HDI <- factor(fao_composite_tall$HDI,levels = c("Low","Medium", "High", "Very high"))
 ewers_plot_all(data = fao_composite_tall %>% filter(Area != "Marshall Islands"), 
@@ -150,6 +122,5 @@ ewers_plot_all(data = fao_composite_tall %>% filter(Area != "Marshall Islands"),
                Z = "CO2_eq_emissions",
                start = 2010,
                end = 2017)
->>>>>>> 467e78fdba4f16fffa9cf0dd51357030a595abf0:scripts/old/Journal club Practice Plots.R
 
 

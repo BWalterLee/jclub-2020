@@ -10,13 +10,6 @@
 library(rlang)
 library(tidyverse)
 
-<<<<<<< HEAD:scripts/Ewers_replication_code.R
-staple = staple_data_clean
-pop = pop_data_clean
-start = 1979
-end = 1999
-=======
->>>>>>> 467e78fdba4f16fffa9cf0dd51357030a595abf0:scripts/ewers_staple_only_function.R
 
 # The function
 ewers_plot <- function(staple,pop,start,end){
@@ -122,12 +115,6 @@ pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T) %>%
 names(pop_data) <- as.character(names(pop_data))
 pop_data_clean <- pop_data
 
-<<<<<<< HEAD:scripts/Ewers_replication_code.R
-head(staple_data_clean)
-head(pop_data_clean)
-# Running Function
-ewers_plot(staple = staple_data_clean, pop = pop_data_clean, start = 1979, end = 1999)
-=======
 
 
 
@@ -142,7 +129,6 @@ ewers_plot(staple = staple_data_clean, pop = pop_data_clean, start = 1979, end =
 
 
 
->>>>>>> 467e78fdba4f16fffa9cf0dd51357030a595abf0:scripts/ewers_staple_only_function.R
 
 # Function just for Data exporting
 # The function
@@ -225,23 +211,7 @@ ewers_data <- function(staple,pop,start,end){
 
 
 data_79_99 <- ewers_data(staple = staple_data_clean, pop = pop_data_clean, start = 1979, end = 1999)
-<<<<<<< HEAD:scripts/Ewers_replication_code.R
-merge <- read.csv("../data/mergeset.csv", header = T, sep = ",")
-ewers_repeat <- left_join(data_79_99,merge) %>% 
-  filter(!is.na(HDI) & HDI != "N/A")
-ewers_repeat$HDI <- factor(ewers_repeat$HDI, levels = c("Low", "Medium", "High", "Very high"))
-head(ewers_repeat)
-View(ewers_repeat)
-e_repeat_plot <- ggplot(data = ewers_repeat, mapping = aes(x = log.delta.yield, y = log.delta.area)) + theme_classic() +
-  geom_point() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + geom_smooth(method = "lm") + xlim(-.6,1.5)+
-  ylim(-1.2,.6) + labs(x = "log(yield ratio)", y = "log(per capita cropland ratio)", title = "1979-1999") +
-  facet_wrap(~HDI)
-
-e_repeat_plot
-
-=======
 View(data_79_99)
->>>>>>> 467e78fdba4f16fffa9cf0dd51357030a595abf0:scripts/ewers_staple_only_function.R
 lm_79_99 <- lm(log.delta.area ~ log.delta.yield, data = data_79_99)
 summary(lm_79_99)
 
