@@ -2,17 +2,10 @@
 # New Script for 5 year averaging 2/27.
 
 library(tidyverse)
+library(broom)
+library(ggpubr)
 
 fao_composite_tall = read.csv("../data/fao_composite_tall.csv", header = T, sep = ",")
-
-data = fao_composite_tall
-X = "kcal.ha.avg"
-Y = "area.tot"
-Z = "tonnes_nitrogen"
-start = 1997
-end = 2017
-
-
 
 ewers_plot_avg <- function(data, X, Y, Z, start, end, facet= NA){
   
@@ -35,7 +28,8 @@ ewers_plot_avg <- function(data, X, Y, Z, start, end, facet= NA){
     pivot_wider(names_from = time, values_from = c(avg.x,avg.y,avg.z))  %>% 
     dplyr::mutate(x_dif = avg.x_end.5 / avg.x_start.5,
                   y_dif = avg.y_end.5 / avg.y_start.5,
-                  z_dif = avg.z_end.5 / avg.z_start.5)
+                  z_dif = avg.z_end.5 / avg.z_start.5) %>% 
+    dplyr::filter(z_dif != Inf & z_dif != 0)
   
   mz <- 10*mean(data_cut$z_dif,na.rm = T)
   lmz <- mean(data_cut$z_dif,na.rm = T)/10
@@ -81,6 +75,15 @@ ewers_plot_avg(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam",
                start = 1979,
                end = 1999)
 
+ewers_plot_avg(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+               X = "kcal.ha.avg",
+               Y = "area.tot",
+               Z = "tonnes_nitrogen",
+               start = 1995,
+               end = 2015)
+
+
+# Function to generate data frames for average values
 ewers_plot_avg_data <- function(data, X, Y, Z, start, end, facet= NA){
   
   start.lab = as.name(paste("x",as.character(start),sep = ""))
@@ -102,7 +105,8 @@ ewers_plot_avg_data <- function(data, X, Y, Z, start, end, facet= NA){
     pivot_wider(names_from = time, values_from = c(avg.x,avg.y,avg.z))  %>% 
     dplyr::mutate(x_dif = avg.x_end.5 / avg.x_start.5,
                   y_dif = avg.y_end.5 / avg.y_start.5,
-                  z_dif = avg.z_end.5 / avg.z_start.5)
+                  z_dif = avg.z_end.5 / avg.z_start.5)%>% 
+    dplyr::filter(z_dif != Inf & z_dif != 0)
   
   mz <- 10*mean(data_cut$z_dif,na.rm = T)
   lmz <- mean(data_cut$z_dif,na.rm = T)/10
@@ -135,7 +139,7 @@ data95_15avg <- ewers_plot_avg_data(data = fao_composite_tall %>% filter(Area !=
                X = "kcal.ha.avg",
                Y = "area.tot",
                Z = "tonnes_nitrogen",
-               start = 1979,
+               start = 1995,
                end = 2015)
 
 data79_99avg <- ewers_plot_avg_data(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
@@ -145,12 +149,36 @@ data79_99avg <- ewers_plot_avg_data(data = fao_composite_tall %>% filter(Area !=
                                     start = 1979,
                                     end = 1999)
 
-View(data95_15avg)
 
-hist(data95_15avg$log.y.dif)
+# Models, now average, of sparing 
+ewers_model  <- lm(log.y.dif ~ log.x.dif, data = data79_99avg)
+recent_model <- lm(log.y.dif ~ log.x.dif, data = data95_15avg)
+tidy(ewers_model)
+tidy(recent_model)
 
-ewers_model <- lm(log.y.dif ~ log.x.dif*log.z.dif, data = data79_99avg)
-recent_model <- lm(log.y.dif ~ log.x.dif*log.z.dif, data = data95_15avg)
+# Nitrogen modifier
+old_model_nitro  <- lm(log.y.dif ~ log.x.dif*log.z.dif, data = data79_99avg)
+new_model_nitro <-  lm(log.y.dif ~ log.x.dif*log.z.dif, data = data95_15avg)
+tidy(old_model_nitro)
+tidy(new_model_nitro)
 
-summary(ewers_model)
-summary(recent_model)
+# Exports modifier
+data95_15avg_exp <- ewers_plot_avg_data(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+                                    X = "kcal.ha.avg",
+                                    Y = "area.tot",
+                                    Z = "export_value_usd",
+                                    start = 1995,
+                                    end = 2015)
+
+data79_99avg_exp <- ewers_plot_avg_data(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+                                    X = "kcal.ha.avg",
+                                    Y = "area.tot",
+                                    Z = "export_value_usd",
+                                    start = 1979,
+                                    end = 1999)
+
+old_model_exports  <- lm(log.y.dif ~ log.x.dif*log.z.dif, data = data79_99avg_exp)
+new_model_exports <-  lm(log.y.dif ~ log.x.dif*log.z.dif, data = data95_15avg_exp)
+tidy(old_model_exports)
+tidy(new_model_exports)
+
