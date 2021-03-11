@@ -22,15 +22,15 @@ ewers_plot_all <- function(data, X, Y, Z, start, end, facet= NA){
     dplyr::filter(Year == start | Year == end) %>% 
     dplyr::select(Area,Year,Population,!!X,!!Y, !!Z) %>% 
     dplyr::filter(!is.na(!!x.lab) & !is.na(!!y.lab)) %>% 
-    dplyr::mutate(x_percap = !!x.lab, y_percap = !!y.lab/Population, z_percap = !!z.lab/Population) %>% 
+    dplyr::mutate(x_percap = !!x.lab/Population, y_percap = !!y.lab/Population, z_percap = !!z.lab/Population) %>% 
     dplyr::select(Area,Year,x_percap,y_percap,z_percap) %>% 
     pivot_wider(names_from = Year, values_from = c(x_percap,y_percap,z_percap)) %>% 
     dplyr::mutate(x_dif = !!as.name(paste("x_percap_",as.character(end), sep = "")) / !!as.name(paste("x_percap_",as.character(start), sep = "")),
                   y_dif = !!as.name(paste("y_percap_",as.character(end), sep = "")) / !!as.name(paste("y_percap_",as.character(start), sep = "")),
                   z_dif = !!as.name(paste("z_percap_",as.character(end), sep = "")) / !!as.name(paste("z_percap_",as.character(start), sep = "")))
   
-  mz <- 10*mean(data_cut$z_dif,na.rm = T)
-  lmz <- mean(data_cut$z_dif,na.rm = T)/10
+  mz <- 5*mean(data_cut$z_dif,na.rm = T)
+  lmz <- mean(data_cut$z_dif,na.rm = T)/5
   data_cut = data_cut %>% 
     dplyr::mutate(log.x.dif = log(x_dif),
                   log.y.dif = log(y_dif),
@@ -92,18 +92,13 @@ str(fao_composite_tall)
 #                      change in cropland area per capita on the Y axis (same as Ewers),
 #                 and tonnes of nitrogen fertilizer added to fields per capita as the color scale 
 #                 from years 2010 to 2017. 
-ewers_plot_all(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam"), 
-                      X = "kcal.ha.avg",
+ewers_plot_all(data = fao_composite_tall, 
+                      X = "kcal.ha.tot",
                       Y = "area.tot",
                       Z = "tonnes_nitrogen",
-<<<<<<< HEAD:scripts/Journal club Practice Plots.R
                       start = 2000,
                       end = 2017)
 
-=======
-                      start = 1979,
-                      end = 1999)
->>>>>>> 467e78fdba4f16fffa9cf0dd51357030a595abf0:scripts/old/Journal club Practice Plots.R
 
 # Example including facet
 ewers_plot_all(data = fao_composite_tall, 
@@ -123,7 +118,6 @@ ewers_plot_all(data = fao_composite_tall,
                end = )
 
 
-<<<<<<< HEAD:scripts/Journal club Practice Plots.R
 # New for Tob
 
 na <- ewers_plot_all(data = fao_composite_tall, 
@@ -141,15 +135,5 @@ na_f <- ewers_plot_all(data = fao_composite_tall,
                end = 1999, facet = "HDI")
 ggsave("../Figures/na7999.png", na)
 ggsave("../Figures/na7999_facet.png", na_f, width = 12, height = 9)
-=======
-# Examples from powerpoint
-fao_composite_tall$HDI <- factor(fao_composite_tall$HDI,levels = c("Low","Medium", "High", "Very high"))
-ewers_plot_all(data = fao_composite_tall %>% filter(Area != "Marshall Islands"), 
-               X = "kcal.ha.tot",
-               Y = "area.tot",
-               Z = "CO2_eq_emissions",
-               start = 2010,
-               end = 2017)
->>>>>>> 467e78fdba4f16fffa9cf0dd51357030a595abf0:scripts/old/Journal club Practice Plots.R
 
 
