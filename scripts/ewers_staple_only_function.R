@@ -19,11 +19,6 @@
 library(rlang)
 library(tidyverse)
 
-staple = staple_data_clean
-pop = pop_data_clean
-start = 1979
-end = 1999
-
 # The function
 ewers_plot <- function(staple,pop,start,end){
 
@@ -128,10 +123,9 @@ pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T) %>%
 names(pop_data) <- as.character(names(pop_data))
 pop_data_clean <- pop_data
 
-head(staple_data_clean)
-head(pop_data_clean)
+
 # Running Function
-ewers_plot(staple = staple_data_clean, pop = pop_data_clean, start = 1979, end = 1999)
+ewers_plot(staple = staple_data_clean, pop = pop_data_clean, start = 1979, end = 2018)
 
 # Function for Data exporting
 # The function
@@ -214,19 +208,6 @@ ewers_data <- function(staple,pop,start,end){
 
 
 data_79_99 <- ewers_data(staple = staple_data_clean, pop = pop_data_clean, start = 1979, end = 1999)
-merge <- read.csv("../data/mergeset.csv", header = T, sep = ",")
-ewers_repeat <- left_join(data_79_99,merge) %>% 
-  filter(!is.na(HDI) & HDI != "N/A")
-ewers_repeat$HDI <- factor(ewers_repeat$HDI, levels = c("Low", "Medium", "High", "Very high"))
-head(ewers_repeat)
-View(ewers_repeat)
-e_repeat_plot <- ggplot(data = ewers_repeat, mapping = aes(x = log.delta.yield, y = log.delta.area)) + theme_classic() +
-  geom_point() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + geom_smooth(method = "lm") + xlim(-.6,1.5)+
-  ylim(-1.2,.6) + labs(x = "log(yield ratio)", y = "log(per capita cropland ratio)", title = "1979-1999") +
-  facet_wrap(~HDI)
-
-e_repeat_plot
-
 lm_79_99 <- lm(log.delta.area ~ log.delta.yield, data = data_79_99)
 summary(lm_79_99)
 
