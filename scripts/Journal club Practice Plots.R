@@ -1,4 +1,6 @@
-# Last Update 2/12/2021
+# Last Update 2/17/2021
+
+# Fixed Z-axis scaling issue
 
 
 # Install these packages
@@ -32,7 +34,7 @@ ewers_plot_all <- function(data, X, Y, Z, start, end, facet= NA){
   data_cut = data_cut %>% 
     dplyr::mutate(log.x.dif = log(x_dif),
                   log.y.dif = log(y_dif),
-                  log.z.dif = ifelse(z_dif >= (mz)| z_dif <= (lmz)| is.na(z_dif), NA ,z_dif)) %>% 
+                  log.z.dif = ifelse(z_dif >= (mz)| z_dif <= (lmz)| is.na(z_dif), NA ,log(z_dif))) %>% 
     dplyr::filter(!is.na(log.x.dif) & !is.na(log.y.dif))
   
   # Fix how model runs later
@@ -66,6 +68,7 @@ return(plot)
 # Load this data, was attached to email
 fao_composite_tall = read.csv("../data/fao_composite_tall.csv", header = T, sep = ",")
 
+str(fao_composite_tall)
 # Now you can use this function to visualize any trend you want from the time period 1979-2018,
 #  though some data will be missing from those time periods. 
 
@@ -94,15 +97,16 @@ ewers_plot_all(data = fao_composite_tall,
                       Y = "area.tot",
                       Z = "tonnes_nitrogen",
                       start = 2000,
-                      end = 2010)
+                      end = 2017)
+
 
 # Example including facet
 ewers_plot_all(data = fao_composite_tall, 
                X = "kcal.ha.tot",
                Y = "area.tot",
                Z = "tonnes_nitrogen",
-               start = 2000,
-               end = 2010, facet = "HDI")
+               start = 1979,
+               end = 1999, facet = "HDI")
 
 # Feel free to try your own years by plugging into the template below! 
 #      Some years may cause an error if there are too many NA's for the Z value
@@ -114,5 +118,22 @@ ewers_plot_all(data = fao_composite_tall,
                end = )
 
 
+# New for Tob
+
+na <- ewers_plot_all(data = fao_composite_tall, 
+               X = "kcal.ha.tot",
+               Y = "area.tot",
+               Z = "tonnes_nitrogen",
+               start = 1979,
+               end = 1999)
+
+na_f <- ewers_plot_all(data = fao_composite_tall, 
+               X = "kcal.ha.tot",
+               Y = "area.tot",
+               Z = "tonnes_nitrogen",
+               start = 1979,
+               end = 1999, facet = "HDI")
+ggsave("../Figures/na7999.png", na)
+ggsave("../Figures/na7999_facet.png", na_f, width = 12, height = 9)
 
 
