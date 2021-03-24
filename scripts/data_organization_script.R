@@ -4,6 +4,8 @@
 
 # Holy shit Ben you're trash, "Cottonseed" now changed to "Seed cotton" 3/24
 
+# Added Food supply 3/24
+
 staple_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
   dplyr::filter(Area.Code < 1000) %>% 
   dplyr::filter(Item =="Apples"| Item == "Barley"| Item ==  "Bananas"| Item == "Cassava"| Item == "Coconuts"| Item ==  "Seed cotton"| 
@@ -155,6 +157,11 @@ staple_exports_raw <- read.csv("../data/fao_staple_export_value.csv", sep = ",",
   dplyr::group_by(Area,Year) %>% 
   dplyr::summarise(mean.staple.exports = mean(staple.export.value, na.rm = T))
 
+# Daily Kcal per-capita food availability WRONG!!!!!!!!!!!!!! VARIABILITY NOT VALUE!!!!!!!!!  
+kcal_percap_daily  <- read.csv("../data/food-supply-kcal.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Code != "")
+  
+
 fao_staple_complete <- left_join(pop_data_clean,nitrogen_data) %>% 
   left_join(.,staple_imports_raw) %>% 
   left_join(.,staple_exports_raw) %>% 
@@ -163,6 +170,7 @@ fao_staple_complete <- left_join(pop_data_clean,nitrogen_data) %>%
   left_join(.,pest_total_data) %>% 
   left_join(.,for_invest_data) %>% 
   left_join(.,emissions_data) %>% 
+  left_join(.,kcal_percap_daily) %>% 
   left_join(.,mergeset)
 View(fao_staple_complete)
 
