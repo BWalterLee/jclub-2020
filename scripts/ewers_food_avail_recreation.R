@@ -1,14 +1,18 @@
+# Recreate Ewers Food- availability interaction model
 
-# New Script for 5 year averaging 2/27.
-
+# The Classics
 library(tidyverse)
 library(broom)
 library(ggpubr)
 
-
+# New 
 fao_updated_staple = read.csv("../data/fao_updated_staple.csv", header = T, sep = ",")
+fao_updated_staple$HDI  <- factor(fao_updated_staple$HDI, levels = c("Low", "Medium", "High", "Very high"))
+data = read.csv("../data/fao_updated_staple.csv", header = T, sep = ",") 
+View(fao_updated_staple)
 
-# Plotting Function SWITCHED Z TO RAW AGAIN (not per capita)
+# Functions 
+# Plotting Function 
 ewers_plot_avg <- function(data, X, Y, Z, start, end, facet= NA){
   
   start.lab = as.name(paste("x",as.character(start),sep = ""))
@@ -19,11 +23,11 @@ ewers_plot_avg <- function(data, X, Y, Z, start, end, facet= NA){
   #
   # Cut data for years and variables only, adjust for per capita
   data_cut = data %>% 
-   # dplyr::filter(export_value_usd >= 200000) %>%  # FILTER COUNTRIES HERE
+    # dplyr::filter(export_value_usd >= 200000) %>%  # FILTER COUNTRIES HERE
     dplyr::select(Area,Year,Population,!!X,!!Y, !!Z) %>%    # 
     dplyr::filter(!is.na(!!x.lab) & !is.na(!!y.lab)) %>%   # 
     dplyr::filter(between(Year,(start-2),(start+2))|between(Year,(end-2),(end+2)))   %>%                            # Select Years
-    dplyr::mutate(x_percap = !!x.lab, y_percap = !!y.lab/Population, z_percap = !!z.lab,
+    dplyr::mutate(x_percap = !!x.lab, y_percap = !!y.lab/Population, z_percap = !!z.lab/Population,
                   time = if_else(Year <= (start+2) & Year >= (start-2),"start.5","end.5"))%>% #Note that X here now is not per-capita
     dplyr::select(Area,time,x_percap,y_percap,z_percap) %>% 
     dplyr::group_by(Area,time) %>% 
@@ -48,7 +52,7 @@ ewers_plot_avg <- function(data, X, Y, Z, start, end, facet= NA){
   #lm.coef = round(as.data.frame(coef(lm))[2,1],digits = 3)
   head(data)
   merge_set <- data %>% 
-    dplyr::select(2,16,18,19) %>% 
+    dplyr::select(2,14,16,17) %>% 
     distinct(.)
   head(merge_set)
   data_cut_facet <- left_join(data_cut,merge_set, by = "Area") %>% 
@@ -123,176 +127,91 @@ ewers_plot_avg_data <- function(data, X, Y, Z, start, end, facet= NA){
   # if_else(is.na(lm.coef), return(plot), return(plot.coef))
 } 
 
-# Plots and Models for New Staple Data ####
-
-
-# First examination is using models with an interaction, 
-#  which is kinda limited by the fact that the area ~ yield interaction is so weak.
-
-# Mean staple exports over time 
-# Data For Models
+# Recreate Original Ewers Model (ignore exports in this case)
 data79_99_exp <- ewers_plot_avg_data(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
                                      X = "kcal.ha.avg",
                                      Y = "area.tot",
                                      Z = "mean.staple.exports",
                                      start = 1979,
                                      end = 1999)
-
-data95_15_exp <- ewers_plot_avg_data(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
-                                    X = "kcal.ha.avg",
-                                    Y = "area.tot",
-                                    Z = "mean.staple.exports",
-                                    start = 1995,
-                                    end = 2015)
-
-# Plots and models
 ewers_plot_avg(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
                X = "kcal.ha.avg",
                Y = "area.tot",
                Z = "mean.staple.exports",
                start = 1979,
                end = 1999)
-summary(lm(log.y.dif ~ log.x.dif*log.z.dif, data = data79_99_exp))
+summary(lm(log.y.dif ~ log.x.dif, data = data79_99_exp))
 
-ewers_plot_avg(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
-               X = "kcal.ha.avg",
-               Y = "area.tot",
-               Z = "mean.staple.exports",
-               start = 1995,
-               end = 2015)
-summary(lm(log.y.dif ~ log.x.dif*log.z.dif, data = data95_15_exp))
+# Add the start date food availability to the dataset for use as a predictor
+food_avail_79 <- read.csv("../data/food-supply-kcal.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Code != "" & Year == 1979) %>% 
+  dplyr::select(-Code, -Year)
+    #View(food_avail_79)
+data79_99_exp_fa <- left_join(data79_99_exp,food_avail_79)
 
-# Mean staple imports over time 
-# Data
-data79_99_imp <- ewers_plot_avg_data(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+# Plot and Model examining effects of Changes in staple crop Yield and food availability 
+#   on area of cropland for staple production
+a <- ggplot(data = data79_99_exp_fa, mapping = aes(x = log.x.dif, y = log.y.dif, color = kcal.capita.day)) + theme_classic() +
+  geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_smooth(method = "lm", alpha = .2)  + 
+  labs(x = "Change in Yield (kcal/ha/percap) of Staple Crops", y = "Change in Area for Staple Crop Production",
+       title = "1979-1999") +
+  scale_color_viridis_c(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom") +
+  facet_wrap(~HDI)
+
+
+summary(lm(log.y.dif ~ log.x.dif*kcal.capita.day, data = data79_99_exp_fa))
+      # Takeaways: - Land sparing IS occurring, increase yield decreased area used in ag
+      #            - Countries with greater food availability somewhat improved sparing (not signifciantly)
+      #            - Countries with high food availability and high yield did NOT spare land as well? 
+      #            - Counterintuitive takeaway here...
+      # BUT THIS IS ALL COUNTRIES!  Ewers looked only at Developing countries, so I'll try that
+
+summary(lm(log.y.dif ~ log.x.dif*kcal.capita.day, data = data79_99_exp_fa %>% dplyr::filter(Developed == "Less developed")))
+
+
+# New Modern Period
+data95_15_exp <- ewers_plot_avg_data(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
                                      X = "kcal.ha.avg",
                                      Y = "area.tot",
-                                     Z = "mean.staple.imports",
-                                     start = 1979,
-                                     end = 1999)
-
-data95_15_imp <- ewers_plot_avg_data(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
-                                     X = "kcal.ha.avg",
-                                     Y = "area.tot",
-                                     Z = "mean.staple.imports",
+                                     Z = "mean.staple.exports",
                                      start = 1995,
                                      end = 2015)
 
-ewers_plot_avg(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
-               X = "kcal.ha.avg",
-               Y = "area.tot",
-               Z = "mean.staple.imports",
-               start = 1979,
-               end = 1999)
-summary(lm(log.y.dif ~ log.x.dif*log.z.dif, data = data79_99_imp))
+food_avail_95 <- read.csv("../data/food-supply-kcal.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Code != "" & Year == 1995) %>% 
+  dplyr::select(-Code, -Year)
+#View(food_avail_79)
+data95_15_exp_fa <- left_join(data95_15_exp,food_avail_95)
 
-ewers_plot_avg(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
-               X = "kcal.ha.avg",
-               Y = "area.tot",
-               Z = "mean.staple.imports",
-               start = 1995,
-               end = 2015)
-summary(lm(log.y.dif ~ log.x.dif*log.z.dif, data = data95_15_imp))
-
-# Given the lack of contribution of yield to area changes for 95-15 period, reexamining
-#   using just exp/imports and area changes
-#   X axis is now exp/imp value, Y still area total
-
-#Exp
-exp_on_area_95_15 <- ggplot(data = data95_15_exp, mapping = aes(x = log.z.dif, y = log.y.dif)) + theme_classic() +
+b <- ggplot(data = data95_15_exp_fa %>% dplyr::filter(Area != "Trinidad and Tobago" & Area != "Saint Lucia"), mapping = aes(x = log.x.dif, y = log.y.dif, color = kcal.capita.day)) + theme_classic() +
   geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_text(aes(label = Area), alpha = .5)+
   geom_smooth(method = "lm", alpha = .2)  + 
-  labs(x = "Change in Value of Staple Crop Exports", y = "Change in Area for Staple Crop Production") +
-  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom")
-exp_on_area_95_15
-
-exp_on_area_95_15_HDI <- ggplot(data = data95_15_exp, mapping = aes(x = log.z.dif, y = log.y.dif)) + theme_classic() +
-  geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
-  geom_smooth(method = "lm", alpha = .2)  + 
-  labs(x = "Change in Value of Staple Crop Exports", y = "Change in Area for Staple Crop Production") +
-  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom") +
+  labs(x = "Change in Yield (kcal/ha/percap) of Staple Crops", y = "Change in Area for Staple Crop Production",
+       title = "1995-2015") +
+  scale_color_viridis_c(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom") +
   facet_wrap(~HDI)
-exp_on_area_95_15_HDI
 
-#Imp
-imp_on_area_95_15 <- ggplot(data = data95_15_imp, mapping = aes(x = log.z.dif, y = log.y.dif)) + theme_classic() +
+summary(lm(log.y.dif ~ log.x.dif*kcal.capita.day, data = data95_15_exp_fa %>% dplyr::filter(Developed == "Less developed")))
+
+
+# Quick High HDI comparison
+early_high <- ggplot(data = data79_99_exp_fa %>% dplyr::filter(Area != "Trinidad and Tobago" & Area != "Saint Lucia"  & Area != "Jordan"), mapping = aes(x = log.x.dif, y = log.y.dif, color = kcal.capita.day)) + theme_classic() +
   geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_text(aes(label = Area), alpha = .5)+
   geom_smooth(method = "lm", alpha = .2)  + 
-  labs(x = "Change in Value of Staple Crop imports", y = "Change in Area for Staple Crop Production") +
-  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom")
-imp_on_area_95_15
+  labs(x = "Change in Yield (kcal/ha/percap) of Staple Crops", y = "Change in Area for Staple Crop Production",
+       title = "1979-1999") +
+  scale_color_viridis_c(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom")
 
-imp_on_area_95_15_HDI <- ggplot(data = data95_15_imp, mapping = aes(x = log.z.dif, y = log.y.dif)) + theme_classic() +
+
+late_high <- ggplot(data = data95_15_exp_fa %>% dplyr::filter(Area != "Trinidad and Tobago" & Area != "Saint Lucia" ), mapping = aes(x = log.x.dif, y = log.y.dif, color = kcal.capita.day)) + theme_classic() +
   geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_text(aes(label = Area), alpha = .5)+
   geom_smooth(method = "lm", alpha = .2)  + 
-  labs(x = "Change in Value of Staple Crop imports", y = "Change in Area for Staple Crop Production") +
-  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom") +
-  facet_wrap(~HDI)
-imp_on_area_95_15_HDI
+  labs(x = "Change in Yield (kcal/ha/percap) of Staple Crops", y = "Change in Area for Staple Crop Production",
+       title = "1995-2015") +
+  scale_color_viridis_c(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom")
 
-ggarrange(exp_on_area_95_15_HDI,imp_on_area_95_15_HDI, nrow = 1)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# NEW (But now actually old 3/24) MODELS
-#   Pesticide Models
-ewers_plot_avg(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
-                    X = "kcal.ha.avg",
-                    Y = "area.tot",
-                    Z = "tonnes_pest_total",
-                    start = 1995,
-                    end = 2015)
-
-data95_15avg_pest <- ewers_plot_avg_data(data = fao_composite_tall %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
-                                        X = "kcal.ha.avg",
-                                        Y = "area.tot",
-                                        Z = "tonnes_pest_total",
-                                        start = 1995,
-                                        end = 2015)
-
-
-new_model_pest <- lm(log.y.dif ~ log.z.dif*HDI, data = data95_15avg_exp)
-
-summary(new_model_nitro)
-summary(new_model_exports)
-summary(new_model_pest)
-
-# Corr Stuff (bad) ####
-library(corrplot)
-
-corr_15 <- fao_composite_tall %>% # This is crap
-  filter(Year == 1995) %>% 
-  dplyr::select(3, 5:11,13)
-View(corr_15)
-
-M <- cor(corr_15, use = "complete.obs")
-corrplot(M, method = "circle")
-#####
-
-
-
-
-
-
-
-
-
-
-
-
-
+ggarrange(early_high,late_high, common.legend = T, nrow = 1)
