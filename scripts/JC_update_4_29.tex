@@ -1,0 +1,665 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={JClub 4/26 Updates},
+  pdfauthor={Ben},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+
+\title{JClub 4/26 Updates}
+\author{Ben}
+\date{4/26/2021}
+
+\begin{document}
+\maketitle
+
+\hypertarget{jc-project-426}{%
+\subsection{JC Project 4/26}\label{jc-project-426}}
+
+Ben's list of things to do for Journal club prior to meeting on 4/29
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Generate new datasets for crop subsets
+\item
+  Generate full corrplot for relevant responses
+\item
+  Summarize Models for 1995-2015 on interactive effects of Nitrogen,
+  Exp/Imp, and Pesticide use on area changes
+\item
+  Re-examine Z-level Factors non-transformed
+\end{enumerate}
+
+\hypertarget{generate-new-datasets-for-crop-subsets}{%
+\subsubsection{1. Generate new datasets for crop
+subsets}\label{generate-new-datasets-for-crop-subsets}}
+
+\hypertarget{goal-have-datasets-available-where-we-can-examine-effects-on-only-a-subset-of-staple-crops-i.e.-those-primarily-gm-in-certain-countries}{%
+\paragraph{Goal: Have datasets available where we can examine effects on
+only a subset of staple crops, i.e.~those primarily GM in certain
+countries}\label{goal-have-datasets-available-where-we-can-examine-effects-on-only-a-subset-of-staple-crops-i.e.-those-primarily-gm-in-certain-countries}}
+
+From what I've seen, the main 4 GM crops grown globally are soybean,
+cotton, maize, and canola, and since canola isn't one of those staple
+crops I'm going to create a few datasets looking at the other 3 together
+and individuallly.
+
+Big disclaimer here is that ``cotton'' is actually ``Seed cotton'' aka
+calories from cottonseed oil, so that may be unrepresentative when it
+comes to actual cotton production or yield calculations.
+
+Not shown here, but have datasets now available that have each of the
+three individually and combined for analysis.
+
+Quick example, lets look at the 1979-1999 and 1995-2015 Ewers
+relationships if it was ONLY SOYBEANS! (made another new little
+function, only other change is ``area.tot'' is now ``area.harv'')
+
+\hypertarget{just-soy}{%
+\paragraph{Just Soy}\label{just-soy}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{soy1 <-}\StringTok{ }\KeywordTok{ewers_plot_avg_commod}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ soy_full }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Area }\OperatorTok{!=}\StringTok{ "Brunei Darussalam"}\NormalTok{, Area }\OperatorTok{!=}\StringTok{ "Maldives"}\NormalTok{), }
+                   \DataTypeTok{X =} \StringTok{"kcal.ha.avg"}\NormalTok{,}
+                   \DataTypeTok{Y =} \StringTok{"area.harv"}\NormalTok{,}
+                   \DataTypeTok{start =} \DecValTok{1979}\NormalTok{,}
+                   \DataTypeTok{end =} \DecValTok{1999}\NormalTok{) }
+\NormalTok{soy2 <-}\StringTok{ }\KeywordTok{ewers_plot_avg_commod}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ soy_full }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Area }\OperatorTok{!=}\StringTok{ "Brunei Darussalam"}\NormalTok{, Area }\OperatorTok{!=}\StringTok{ "Maldives"}\NormalTok{), }
+                   \DataTypeTok{X =} \StringTok{"kcal.ha.avg"}\NormalTok{,}
+                   \DataTypeTok{Y =} \StringTok{"area.harv"}\NormalTok{,}
+                   \DataTypeTok{start =} \DecValTok{1995}\NormalTok{,}
+                   \DataTypeTok{end =} \DecValTok{2015}\NormalTok{)}
+\KeywordTok{ggarrange}\NormalTok{(soy1,soy2, }\DataTypeTok{common.legend =}\NormalTok{ T)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{JC_update_4_29_files/figure-latex/unnamed-chunk-1-1.pdf}
+
+Interesting but unsurprising that individual commodities dont follow
+global trends!
+
+\hypertarget{generate-full-corrplot-for-relevant-responses}{%
+\subsection{2. Generate full corrplot for relevant
+responses}\label{generate-full-corrplot-for-relevant-responses}}
+
+Looking first at untransformed values here.
+
+\hypertarget{section}{%
+\paragraph{1995}\label{section}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{corrplot}\NormalTok{(}\KeywordTok{cor}\NormalTok{(}\KeywordTok{drop_na}\NormalTok{(fao_updated_staple }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Year }\OperatorTok{==}\StringTok{ }\DecValTok{1995}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{               }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{select}\NormalTok{(}\DecValTok{3}\NormalTok{,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports))))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{JC_update_4_29_files/figure-latex/1995-1.pdf}
+
+\hypertarget{section-1}{%
+\paragraph{2015}\label{section-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{corrplot}\NormalTok{(}\KeywordTok{cor}\NormalTok{(}\KeywordTok{drop_na}\NormalTok{(fao_updated_staple }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Year }\OperatorTok{==}\StringTok{ }\DecValTok{2015}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{               }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{select}\NormalTok{(}\DecValTok{3}\NormalTok{,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports))))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{JC_update_4_29_files/figure-latex/unnamed-chunk-2-1.pdf}
+
+\hypertarget{per-capita}{%
+\paragraph{1995 per capita}\label{per-capita}}
+
+Below two plots are raw values / Population
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{corrplot}\NormalTok{(}\KeywordTok{cor}\NormalTok{(}\KeywordTok{drop_na}\NormalTok{(fao_updated_staple }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Year }\OperatorTok{==}\StringTok{ }\DecValTok{1995}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{               }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{select}\NormalTok{(}\DecValTok{3}\NormalTok{,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{              }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{tonnes_nitrogen.pc =}\NormalTok{ tonnes_nitrogen}\OperatorTok{/}\NormalTok{Population,}
+                            \DataTypeTok{CO2_eq_emissions.pc =}\NormalTok{ CO2_eq_emissions}\OperatorTok{/}\NormalTok{Population,}
+                            \DataTypeTok{tonnes_pest_total.pc =}\NormalTok{ tonnes_pest_total}\OperatorTok{/}\NormalTok{Population,}
+                            \DataTypeTok{kcal.ha.avg.pc =}\NormalTok{ kcal.ha.avg}\OperatorTok{/}\NormalTok{Population,}
+                            \DataTypeTok{mean.staple.exports.pc =}\NormalTok{ mean.staple.exports}\OperatorTok{/}\NormalTok{Population,}
+                            \DataTypeTok{mean.staple.imports.pc =}\NormalTok{ mean.staple.imports}\OperatorTok{/}\NormalTok{Population) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{                }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\DecValTok{2}\OperatorTok{:-}\DecValTok{7}\NormalTok{))))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{JC_update_4_29_files/figure-latex/unnamed-chunk-3-1.pdf}
+
+\hypertarget{per-capita-1}{%
+\paragraph{2015 per capita}\label{per-capita-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{corrplot}\NormalTok{(}\KeywordTok{cor}\NormalTok{(}\KeywordTok{drop_na}\NormalTok{(fao_updated_staple }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(Year }\OperatorTok{==}\StringTok{ }\DecValTok{2015}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{               }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{select}\NormalTok{(}\DecValTok{3}\NormalTok{,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{              }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{tonnes_nitrogen.pc =}\NormalTok{ tonnes_nitrogen}\OperatorTok{/}\NormalTok{Population,}
+                            \DataTypeTok{CO2_eq_emissions.pc =}\NormalTok{ CO2_eq_emissions}\OperatorTok{/}\NormalTok{Population,}
+                            \DataTypeTok{tonnes_pest_total.pc =}\NormalTok{ tonnes_pest_total}\OperatorTok{/}\NormalTok{Population,}
+                            \DataTypeTok{kcal.ha.avg.pc =}\NormalTok{ kcal.ha.avg}\OperatorTok{/}\NormalTok{Population,}
+                            \DataTypeTok{mean.staple.exports.pc =}\NormalTok{ mean.staple.exports}\OperatorTok{/}\NormalTok{Population,}
+                            \DataTypeTok{mean.staple.imports.pc =}\NormalTok{ mean.staple.imports}\OperatorTok{/}\NormalTok{Population) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{                }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\DecValTok{2}\OperatorTok{:-}\DecValTok{7}\NormalTok{))))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{JC_update_4_29_files/figure-latex/unnamed-chunk-4-1.pdf}
+
+\hypertarget{summarize-all-existing-models-for-1995-2015-on-interactive-effects-of-nitrogen-expimp-and-pesticide-use-on-area-changes}{%
+\subsection{3. Summarize All Existing Models for 1995-2015 on
+interactive effects of Nitrogen, Exp/Imp, and Pesticide use on area
+changes}\label{summarize-all-existing-models-for-1995-2015-on-interactive-effects-of-nitrogen-expimp-and-pesticide-use-on-area-changes}}
+
+\hypertarget{figure-1-per-capita-change-in-area-used-to-grow-and-yield-of-23-staple-crops}{%
+\subsubsection{Figure 1: Per capita change in area used to grow and
+yield of 23 staple
+crops}\label{figure-1-per-capita-change-in-area-used-to-grow-and-yield-of-23-staple-crops}}
+
+First Figure is the basic comparison of Ewers 2009 style analysis with
+updated 1995-2015 data. Reminder, our method now includes averaging of
+two years before and after stated time (i.e.~``1995'' is the average of
+1993-1997)
+\includegraphics{JC_update_4_29_files/figure-latex/unnamed-chunk-5-1.pdf}
+
+These models represent effects of ``kcal.ha.avg'' (yield metric) on area
+used to grow staple crops \#\#\#\# Model Summaries
+
+\begin{Shaded}
+\begin{Highlighting}[]
+    \CommentTok{# Old Ewers Model (Area Change ~ Yield Change 1979-1999)}
+\KeywordTok{Anova}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.x.dif, }\DataTypeTok{data =}\NormalTok{ ewers_}\DecValTok{79}\NormalTok{_}\DecValTok{99}\NormalTok{_data))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Anova Table (Type II tests)
+## 
+## Response: log.y.dif
+##            Sum Sq  Df F value Pr(>F)
+## log.x.dif  0.1617   1  0.8523 0.3574
+## Residuals 28.4500 150
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+    \CommentTok{# New Ewers Model (Area Change ~ Yield Change 1995-2015)}
+\KeywordTok{Anova}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.x.dif, }\DataTypeTok{data =}\NormalTok{ ewers_}\DecValTok{95}\NormalTok{_}\DecValTok{15}\NormalTok{_data))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Anova Table (Type II tests)
+## 
+## Response: log.y.dif
+##           Sum Sq  Df F value    Pr(>F)    
+## log.x.dif  2.887   1  11.843 0.0007248 ***
+## Residuals 42.414 174                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+\end{verbatim}
+
+We find a slightly negative but non-significant relationship from the
+1979-1999 period between yield and total area, but a significant
+positive relationship from 1995-2015.
+
+As a reminder, Ewers found a slight negative relationship in their
+analysis, so we will need to address this later given our difference
+there. I think our year averaging technique is superior, but may need to
+incorporate what they did for the Soviet Union (we have like 40 more
+countries than them too).
+
+\hypertarget{hdi-faceting-same-values}{%
+\paragraph{HDI Faceting same Values}\label{hdi-faceting-same-values}}
+
+\includegraphics{JC_update_4_29_files/figure-latex/Ewers style faceted-1.pdf}
+
+This shows that positive relation is driven primarily by High and Very
+high HDI contries, and could help justify our investigation of countries
+by HDI and other explaining factors.
+
+\hypertarget{nitrogen}{%
+\subsubsection{Nitrogen}\label{nitrogen}}
+
+First Figure is a recreation of the Ewers style plots, with change in
+nitrogen use on the Z. Model summaries below that look at the
+interaction between changes in yield and changes in nitrogen use on area
+used to grow staple crops.
+
+\includegraphics{JC_update_4_29_files/figure-latex/Nitrogen Data gen and plots-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1979-1999 Area ~ Yield * Nitrogen}
+\KeywordTok{tidy}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.x.dif}\OperatorTok{*}\NormalTok{log.z.dif, }\DataTypeTok{data =}\NormalTok{ data79_}\DecValTok{99}\NormalTok{_nitro))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 5
+##   term                estimate std.error statistic       p.value
+##   <chr>                  <dbl>     <dbl>     <dbl>         <dbl>
+## 1 (Intercept)          -0.300     0.0460    -6.52  0.00000000186
+## 2 log.x.dif            -0.120     0.114     -1.05  0.295        
+## 3 log.z.dif             0.0998    0.0578     1.73  0.0870       
+## 4 log.x.dif:log.z.dif   0.0440    0.144      0.306 0.760
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1995-2015 Area ~ Yield * Nitrogen}
+\KeywordTok{tidy}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.x.dif}\OperatorTok{*}\NormalTok{log.z.dif, }\DataTypeTok{data =}\NormalTok{ data95_}\DecValTok{15}\NormalTok{_nitro))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 5
+##   term                estimate std.error statistic  p.value
+##   <chr>                  <dbl>     <dbl>     <dbl>    <dbl>
+## 1 (Intercept)          -0.262     0.0355    -7.38  1.63e-11
+## 2 log.x.dif             0.222     0.120      1.85  6.63e- 2
+## 3 log.z.dif             0.140     0.0408     3.43  7.98e- 4
+## 4 log.x.dif:log.z.dif   0.0242    0.106      0.229 8.20e- 1
+\end{verbatim}
+
+\hypertarget{area-changes-nitrogen-use-1995-2015}{%
+\subsubsection{Area Changes \textasciitilde{} Nitrogen Use
+1995-2015}\label{area-changes-nitrogen-use-1995-2015}}
+
+\includegraphics{JC_update_4_29_files/figure-latex/unnamed-chunk-8-1.pdf}
+
+\begin{verbatim}
+## Anova Table (Type II tests)
+## 
+## Response: log.y.dif
+##            Sum Sq  Df F value    Pr(>F)    
+## log.z.dif  1.8703   1  12.469 0.0005691 ***
+## Residuals 19.9489 133                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+\end{verbatim}
+
+\hypertarget{same-again-split-by-hdi-this-time}{%
+\paragraph{Same again Split by HDI this
+time}\label{same-again-split-by-hdi-this-time}}
+
+\includegraphics{JC_update_4_29_files/figure-latex/unnamed-chunk-9-1.pdf}
+
+\begin{verbatim}
+## Anova Table (Type II tests)
+## 
+## Response: log.y.dif
+##                Sum Sq  Df F value    Pr(>F)    
+## log.z.dif      1.9467   1 13.1401 0.0004168 ***
+## HDI            0.2227   3  0.5010 0.6822503    
+## log.z.dif:HDI  0.9113   3  2.0505 0.1101305    
+## Residuals     18.8149 127                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+\end{verbatim}
+
+\hypertarget{imports-and-exports}{%
+\subsubsection{Imports and Exports}\label{imports-and-exports}}
+
+\hypertarget{exports}{%
+\paragraph{Exports}\label{exports}}
+
+\includegraphics{JC_update_4_29_files/figure-latex/Exp Data and First Ewers-1.pdf}
+
+\^{}\^{}\^{} Lots of missing values above
+
+Analysis
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1979-1999 Area ~ Yield * Exports}
+\KeywordTok{tidy}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.x.dif}\OperatorTok{*}\NormalTok{log.z.dif, }\DataTypeTok{data =}\NormalTok{ data79_}\DecValTok{99}\NormalTok{_exp))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 5
+##   term                estimate std.error statistic p.value
+##   <chr>                  <dbl>     <dbl>     <dbl>   <dbl>
+## 1 (Intercept)         -0.213      0.0782   -2.73   0.00836
+## 2 log.x.dif           -0.122      0.208    -0.586  0.560  
+## 3 log.z.dif           -0.0100     0.0460   -0.218  0.828  
+## 4 log.x.dif:log.z.dif  0.00164    0.0971    0.0169 0.987
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1995-2015 Area ~ Yield * Exports}
+\KeywordTok{tidy}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.x.dif}\OperatorTok{*}\NormalTok{log.z.dif, }\DataTypeTok{data =}\NormalTok{ data95_}\DecValTok{15}\NormalTok{_exp))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 5
+##   term                estimate std.error statistic      p.value
+##   <chr>                  <dbl>     <dbl>     <dbl>        <dbl>
+## 1 (Intercept)         -0.373      0.0636   -5.86   0.0000000446
+## 2 log.x.dif            0.308      0.175     1.76   0.0816      
+## 3 log.z.dif            0.113      0.0346    3.27   0.00143     
+## 4 log.x.dif:log.z.dif -0.00361    0.0883   -0.0409 0.967
+\end{verbatim}
+
+\hypertarget{imports}{%
+\paragraph{Imports}\label{imports}}
+
+\includegraphics{JC_update_4_29_files/figure-latex/unnamed-chunk-10-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1979-1999 Area ~ Yield * Imports}
+\KeywordTok{tidy}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.x.dif}\OperatorTok{*}\NormalTok{log.z.dif, }\DataTypeTok{data =}\NormalTok{ data79_}\DecValTok{99}\NormalTok{_imp))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 5
+##   term                estimate std.error statistic      p.value
+##   <chr>                  <dbl>     <dbl>     <dbl>        <dbl>
+## 1 (Intercept)          -0.285     0.0474    -6.00  0.0000000160
+## 2 log.x.dif            -0.0451    0.112     -0.403 0.687       
+## 3 log.z.dif            -0.0399    0.0631    -0.632 0.529       
+## 4 log.x.dif:log.z.dif  -0.143     0.151     -0.948 0.345
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1995-2015 Area ~ Yield * Imports}
+\KeywordTok{tidy}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.x.dif}\OperatorTok{*}\NormalTok{log.z.dif, }\DataTypeTok{data =}\NormalTok{ data95_}\DecValTok{15}\NormalTok{_imp))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 4 x 5
+##   term                estimate std.error statistic     p.value
+##   <chr>                  <dbl>     <dbl>     <dbl>       <dbl>
+## 1 (Intercept)          -0.306     0.0591     -5.18 0.000000639
+## 2 log.x.dif             0.557     0.136       4.09 0.0000665  
+## 3 log.z.dif             0.0956    0.0486      1.96 0.0511     
+## 4 log.x.dif:log.z.dif  -0.265     0.104      -2.55 0.0116
+\end{verbatim}
+
+\hypertarget{area-changes-exportsimports-1995-2015}{%
+\paragraph{Area Changes \textasciitilde{} Exports/Imports
+1995-2015}\label{area-changes-exportsimports-1995-2015}}
+
+\includegraphics{JC_update_4_29_files/figure-latex/solo Exp/Imp Plots-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1995-2015 Area Change ~ Change in Exports}
+\KeywordTok{tidy}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.z.dif, }\DataTypeTok{data =}\NormalTok{ data95_}\DecValTok{15}\NormalTok{_exp))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 2 x 5
+##   term        estimate std.error statistic      p.value
+##   <chr>          <dbl>     <dbl>     <dbl>        <dbl>
+## 1 (Intercept)   -0.396    0.0648     -6.11 0.0000000130
+## 2 log.z.dif      0.134    0.0342      3.91 0.000153
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1995-2015 Area Change ~ Change in Imports}
+\KeywordTok{tidy}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.z.dif, }\DataTypeTok{data =}\NormalTok{ data95_}\DecValTok{15}\NormalTok{_imp))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 2 x 5
+##   term        estimate std.error statistic  p.value
+##   <chr>          <dbl>     <dbl>     <dbl>    <dbl>
+## 1 (Intercept)   -0.382    0.0583     -6.56 6.49e-10
+## 2 log.z.dif      0.149    0.0484      3.07 2.46e- 3
+\end{verbatim}
+
+\hypertarget{exportimport-split-by-hdi}{%
+\paragraph{Export/Import Split by HDI}\label{exportimport-split-by-hdi}}
+
+\includegraphics{JC_update_4_29_files/figure-latex/unnamed-chunk-11-1.pdf}
+Analyses
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1995-2015 Area Change ~ Change in Exports * HDI}
+\KeywordTok{Anova}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.z.dif}\OperatorTok{*}\NormalTok{HDI, }\DataTypeTok{data =}\NormalTok{ data95_}\DecValTok{15}\NormalTok{_exp))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Anova Table (Type II tests)
+## 
+## Response: log.y.dif
+##                Sum Sq  Df F value    Pr(>F)    
+## log.z.dif      2.4888   1 14.5071 0.0002284 ***
+## HDI            0.0487   3  0.0947 0.9628510    
+## log.z.dif:HDI  0.6312   3  1.2263 0.3035552    
+## Residuals     19.2145 112                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1995-2015 Area Change ~ Change in Imports * HDI}
+\KeywordTok{Anova}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.z.dif}\OperatorTok{*}\NormalTok{HDI, }\DataTypeTok{data =}\NormalTok{ data95_}\DecValTok{15}\NormalTok{_imp))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Anova Table (Type II tests)
+## 
+## Response: log.y.dif
+##               Sum Sq  Df F value   Pr(>F)   
+## log.z.dif      2.077   1  8.4031 0.004265 **
+## HDI            0.184   3  0.2477 0.862889   
+## log.z.dif:HDI  1.808   3  2.4385 0.066465 . 
+## Residuals     40.049 162                    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+\end{verbatim}
+
+\hypertarget{examine-z-factors-non-transformed}{%
+\subsection{4. Examine Z factors
+non-transformed}\label{examine-z-factors-non-transformed}}
+
+This is now looking at some plots and figures without the Z level
+responses (i.e.~nitrogen) scaled to per-capita. These still represent
+log(late/early) values to reflect change over time, they values are just
+not adjusted to population for each region. This may be a bit useless in
+the long run, but might help us identify some of the biggest changes in
+practices.
+
+\hypertarget{section-2}{%
+\paragraph{}\label{section-2}}
+
+\includegraphics{JC_update_4_29_files/figure-latex/unnamed-chunk-13-1.pdf}
+\includegraphics{JC_update_4_29_files/figure-latex/unnamed-chunk-13-2.pdf}
+\includegraphics{JC_update_4_29_files/figure-latex/unnamed-chunk-13-3.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1995-2015 Area Change ~ Change in Nitrogen Applied (tonnes unscaled) * HDI}
+\KeywordTok{Anova}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.z.dif}\OperatorTok{*}\NormalTok{HDI, }\DataTypeTok{data =}\NormalTok{ unscaled_nitro))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Anova Table (Type II tests)
+## 
+## Response: log.y.dif
+##                Sum Sq  Df F value   Pr(>F)   
+## log.z.dif      2.3308   1 10.3990 0.001597 **
+## HDI            0.0829   3  0.1232 0.946239   
+## log.z.dif:HDI  1.8663   3  2.7756 0.043985 * 
+## Residuals     28.9131 129                    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1995-2015 Area Change ~ Change in Exports (unscaled) * HDI}
+\KeywordTok{Anova}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.z.dif}\OperatorTok{*}\NormalTok{HDI, }\DataTypeTok{data =}\NormalTok{ unscaled_exports))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Anova Table (Type II tests)
+## 
+## Response: log.y.dif
+##                Sum Sq  Df F value    Pr(>F)    
+## log.z.dif      2.7009   1 12.2645 0.0006683 ***
+## HDI            0.3393   3  0.5136 0.6737628    
+## log.z.dif:HDI  0.7015   3  1.0618 0.3684481    
+## Residuals     24.2240 110                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# 1995-2015 Area Change ~ Change in Imports (unscaled) * HDI}
+\KeywordTok{Anova}\NormalTok{(}\KeywordTok{lm}\NormalTok{(log.y.dif }\OperatorTok{~}\StringTok{ }\NormalTok{log.z.dif}\OperatorTok{*}\NormalTok{HDI, }\DataTypeTok{data =}\NormalTok{ unscaled_imports))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Anova Table (Type II tests)
+## 
+## Response: log.y.dif
+##               Sum Sq  Df F value Pr(>F)
+## log.z.dif      0.391   1  1.4608 0.2286
+## HDI            0.179   3  0.2230 0.8803
+## log.z.dif:HDI  0.538   3  0.6690 0.5723
+## Residuals     42.857 160
+\end{verbatim}
+
+At first glance there doesn't really seem to be that much of a
+difference with or without scaling (given the ratio is log transformed)
+so we may want to look into another way of investigating this. Instead
+of the ration (late/early) we could simply look at one time points
+completely raw or log-transformed values for correlations with change in
+area (i.e.~only the countries with the most tonnes of nitrogen added had
+changes to area).
+
+\end{document}

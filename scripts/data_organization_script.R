@@ -35,7 +35,7 @@ kcal = data.frame(c("Apples","Barley", "Bananas","Cassava","Coconuts", "Seed cot
 colnames(kcal) = c("Item", "kcal.tonne")
 kcal <- kcal %>% 
   dplyr::mutate(kcal.hg = kcal.tonne/10000)
-# write.csv(kcal, "../data/kcal_staple.csv") # NEVER AGAN
+write.csv(kcal, "../data/kcal_staple.csv") # NEVER AGAN
 
 # Conversion
 kcal.ha <- left_join(yield.tall,kcal %>% dplyr::select(Item,kcal.hg)) %>% 

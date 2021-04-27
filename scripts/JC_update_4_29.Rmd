@@ -2,7 +2,9 @@
 title: "JClub 4/26 Updates"
 author: "Ben"
 date: "4/26/2021"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r packages, include = F}
@@ -12,209 +14,10 @@ library(ggpubr)
 library(kableExtra)
 library(corrplot)
 library(broom)
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(fig.width=10, fig.height=6) 
 ```
-
-## JC Project 4/26
-Ben's list of things to do for Journal club prior to meeting on 4/29
-
-1. Generate new datasets for crop subsets
-2. Generate full corrplot for relevant responses
-3. Summarize Models for 1995-2015 on interactive effects of Nitrogen, Exp/Imp, and Pesticide use on area changes
-4. Re-examine Z-level Factors non-transformed
- 
-
-### 1. Generate new datasets for crop subsets
-
-#### Goal: Have datasets available where we can examine effects on only a subset of staple crops, i.e. those primarily GM in certain countries
-From what I've seen, the main 4 GM crops grown globally are soybean, cotton, maize, and canola, and since canola isn't one of those staple crops I'm going to create a few datasets looking at the other 3 together and individuallly.
-
-Big disclaimer here is that "cotton" is actually "Seed cotton" aka calories from cottonseed oil, so that may be unrepresentative when it comes to actual cotton production or yield calculations.
-
-```{r GM data, include = F}
-#OG Dataset
-fao_updated_staple = read.csv("../data/fao_updated_staple.csv", header = T, sep = ",")
-fao_updated_staple$HDI  <- factor(fao_updated_staple$HDI, levels = c("Low", "Medium", "High", "Very high"))
-
-#kcal and Pop data for reference
-kcal_data <- read.csv("../data/kcal_staple.csv", sep = ",", header = T)
-pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T) %>% 
-  dplyr::mutate(Population = Value*1000) %>% 
-  dplyr::select(Area,Population,Year)
-names(pop_data) <- as.character(names(pop_data))
-
-# soybeans
-soy_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
-  dplyr::filter(Area.Code < 1000) %>% 
-  dplyr::filter(Item == "Soybeans") %>% 
-  dplyr::filter(Element != "Production") 
-names(soy_data) = gsub(pattern = "Y", replacement = "", x = names(soy_data))
-soy_data_clean <- soy_data
-soy_area_tall <- pivot_longer(data = soy_data_clean %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area.harv")%>%
-  dplyr::select(Area, Item, Year,area.harv)
-soy_area_tall$Year <- as.numeric(soy_area_tall$Year)
-head(soy_area_tall)
-
-soy_yield_tall <- pivot_longer(data = soy_data_clean %>% filter(Element == "Yield"),cols = 8:66, names_to = "Year", values_to = "yield") 
-soy_yield_tall$Year <- as.numeric(soy_yield_tall$Year)
-soy_yield_full <- left_join(soy_yield_tall,kcal_data %>% dplyr::select(Item,kcal.hg)) %>% 
-  dplyr::mutate(kcal.per.ha = yield*kcal.hg) %>% 
-  dplyr::select(Area, Item, Year,kcal.per.ha) %>% 
-  dplyr::filter(!is.na(kcal.per.ha))
-
-soy_full <- left_join(soy_area_tall,soy_yield_full) %>% 
-  left_join(.,pop_data)
-write.csv(soy_full,"../data/soy_data.csv")
-
-# maize
-maize_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
-  dplyr::filter(Area.Code < 1000) %>% 
-  dplyr::filter(Item == "Maize") %>% 
-  dplyr::filter(Element != "Production") 
-names(maize_data) = gsub(pattern = "Y", replacement = "", x = names(maize_data))
-maize_data_clean <- maize_data
-maize_area_tall <- pivot_longer(data = maize_data_clean %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area.harv")%>%
-  dplyr::select(Area, Item, Year,area.harv)
-maize_area_tall$Year <- as.numeric(maize_area_tall$Year)
-head(maize_area_tall)
-
-maize_yield_tall <- pivot_longer(data = maize_data_clean %>% filter(Element == "Yield"),cols = 8:66, names_to = "Year", values_to = "yield") 
-maize_yield_tall$Year <- as.numeric(maize_yield_tall$Year)
-maize_yield_full <- left_join(maize_yield_tall,kcal_data %>% dplyr::select(Item,kcal.hg)) %>% 
-  dplyr::mutate(kcal.per.ha = yield*kcal.hg) %>% 
-  dplyr::select(Area, Item, Year,kcal.per.ha) %>% 
-  dplyr::filter(!is.na(kcal.per.ha))
-
-maize_full <- left_join(maize_area_tall,maize_yield_full) %>% 
-  left_join(.,pop_data)
-write.csv(maize_full,"../data/maize_data.csv")
-
-# cotton
-cotton_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
-  dplyr::filter(Area.Code < 1000) %>% 
-  dplyr::filter(Item == "Seed cotton") %>% 
-  dplyr::filter(Element != "Production") 
-names(cotton_data) = gsub(pattern = "Y", replacement = "", x = names(cotton_data))
-cotton_data_clean <- cotton_data
-cotton_area_tall <- pivot_longer(data = cotton_data_clean %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area.harv")%>%
-  dplyr::select(Area, Item, Year,area.harv)
-cotton_area_tall$Year <- as.numeric(cotton_area_tall$Year)
-head(cotton_area_tall)
-
-cotton_yield_tall <- pivot_longer(data = cotton_data_clean %>% filter(Element == "Yield"),cols = 8:66, names_to = "Year", values_to = "yield") 
-cotton_yield_tall$Year <- as.numeric(cotton_yield_tall$Year)
-cotton_yield_full <- left_join(cotton_yield_tall,kcal_data %>% dplyr::select(Item,kcal.hg)) %>% 
-  dplyr::mutate(kcal.per.ha = yield*kcal.hg) %>% 
-  dplyr::select(Area, Item, Year,kcal.per.ha) %>% 
-  dplyr::filter(!is.na(kcal.per.ha))
-
-cotton_full <- left_join(cotton_area_tall,cotton_yield_full) %>% 
-  left_join(.,pop_data)
-write.csv(cotton_full,"../data/cotton_data.csv")
-
-# GM3 (all three)
-GM3_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
-  dplyr::filter(Area.Code < 1000) %>% 
-  dplyr::filter(Item == "Seed cotton"|Item =="Soybeans"|Item == "Maize") %>% 
-  dplyr::filter(Element != "Production") 
-names(GM3_data) = gsub(pattern = "Y", replacement = "", x = names(GM3_data))
-GM3_data_clean <- GM3_data
-GM3_area_tall <- pivot_longer(data = GM3_data_clean %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area.harv")%>%
-  dplyr::select(Area, Item, Year,area.harv)
-GM3_area_tall$Year <- as.numeric(GM3_area_tall$Year)
-head(GM3_area_tall)
-
-GM3_yield_tall <- pivot_longer(data = GM3_data_clean %>% filter(Element == "Yield"),cols = 8:66, names_to = "Year", values_to = "yield") 
-GM3_yield_tall$Year <- as.numeric(GM3_yield_tall$Year)
-GM3_yield_full <- left_join(GM3_yield_tall,kcal_data %>% dplyr::select(Item,kcal.hg)) %>% 
-  dplyr::mutate(kcal.per.ha = yield*kcal.hg) %>% 
-  dplyr::select(Area, Item, Year,kcal.per.ha) %>% 
-  dplyr::filter(!is.na(kcal.per.ha))
-
-GM3_full <- left_join(GM3_area_tall,GM3_yield_full) %>% 
-  left_join(.,pop_data)
-
-GM3_full_summed <- GM3_full %>% 
-  mutate(kcal.total = area.harv*kcal.per.ha) %>% 
-  group_by(Area,Year) %>% 
-  dplyr::summarise(kcal.produced.tot = sum(kcal.total,na.rm = T),
-                   area.tot = sum(area.harv,na.rm = T)) %>% 
-  mutate(kcal.ha.avg = kcal.produced.tot / area.tot) %>% 
-  dplyr::select(-kcal.produced.tot)
-
-write.csv(GM3_full,"../data/GM3_data.csv")
-```
-```{r show newdata}
-scroll_box(
-  kable(soy_full, 
-        caption = "Soybeans") %>% kable_styling(),
-  height = "400px",
-  width = "400px")
-
-scroll_box(
-  kable(maize_full, 
-        caption = "Maize") %>% kable_styling(),
-  height = "400px",
-  width = "400px")
-
-scroll_box(
-  kable(cotton_full, 
-        caption = "Seed Cotton") %>% kable_styling(),
-  height = "600px",
-  width = "400px")
-
-```
-
-## 2. Generate full corrplot for relevant responses
-Looking first at untransformed values here.
-
-#### 1995
-
-```{r 1995}
-corrplot(cor(drop_na(fao_updated_staple %>% filter(Year == 1995) %>% 
-               dplyr::select(3,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports))))
-
-```
-
-####2015
-
-```{r}
-corrplot(cor(drop_na(fao_updated_staple %>% filter(Year == 2015) %>% 
-               dplyr::select(3,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports))))
-```
-
-
-
-#### 1995 per capita
-
-Below two plots are raw values / Population 
-
-```{r}
-corrplot(cor(drop_na(fao_updated_staple %>% filter(Year == 1995) %>% 
-               dplyr::select(3,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports) %>% 
-              dplyr::mutate(tonnes_nitrogen.pc = tonnes_nitrogen/Population,
-                            CO2_eq_emissions.pc = CO2_eq_emissions/Population,
-                            tonnes_pest_total.pc = tonnes_pest_total/Population,
-                            kcal.ha.avg.pc = kcal.ha.avg/Population,
-                            mean.staple.exports.pc = mean.staple.exports/Population,
-                            mean.staple.imports.pc = mean.staple.imports/Population) %>% 
-                dplyr::select(-2:-7))))
-```
-
-#### 2015 per capita
-
-```{r}
-corrplot(cor(drop_na(fao_updated_staple %>% filter(Year == 2015) %>% 
-               dplyr::select(3,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports) %>% 
-              dplyr::mutate(tonnes_nitrogen.pc = tonnes_nitrogen/Population,
-                            CO2_eq_emissions.pc = CO2_eq_emissions/Population,
-                            tonnes_pest_total.pc = tonnes_pest_total/Population,
-                            kcal.ha.avg.pc = kcal.ha.avg/Population,
-                            mean.staple.exports.pc = mean.staple.exports/Population,
-                            mean.staple.imports.pc = mean.staple.imports/Population) %>% 
-                dplyr::select(-2:-7))))
-```
-
-## 3. Summarize All Existing Models for 1995-2015 on interactive effects of Nitrogen, Exp/Imp, and Pesticide use on area changes
 
 ```{r Function List, include = F}
 # Functions: ####
@@ -552,7 +355,276 @@ ewers_plot_avg_data_Zpc <- function(data, X, Y, Z, start, end, facet= NA){
   return(data_clean)
   # if_else(is.na(lm.coef), return(plot), return(plot.coef))
 } 
+
+ewers_plot_avg_commod <- function(data, X, Y, start, end, facet= NA){
+  
+  start.lab = as.name(paste("x",as.character(start),sep = ""))
+  end.lab = as.name(paste("x",as.character(end),sep = ""))
+  x.lab = as.name(X)
+  y.lab = as.name(Y)
+ 
+  #
+  # Cut data for years and variables only, adjust for per capita
+  data_cut = data %>% 
+    # dplyr::filter(export_value_usd >= 200000) %>%  # FILTER COUNTRIES HERE
+    dplyr::select(Area,Year,Population,!!X,!!Y) %>%    # 
+    dplyr::filter(!is.na(!!x.lab) & !is.na(!!y.lab)) %>%   # 
+    dplyr::filter(between(Year,(start-2),(start+2))|between(Year,(end-2),(end+2)))   %>%                            # Select Years
+    dplyr::mutate(x_percap = !!x.lab/Population, y_percap = !!y.lab/Population,
+                  time = if_else(Year <= (start+2) & Year >= (start-2),"start.5","end.5"))%>% #Note that X here now is not per-capita
+    dplyr::select(Area,time,x_percap,y_percap) %>% 
+    dplyr::group_by(Area,time) %>% 
+    dplyr::summarize(avg.x = mean(x_percap,na.rm = T),avg.y = mean(y_percap,na.rm = T))%>% 
+    pivot_wider(names_from = time, values_from = c(avg.x,avg.y))  %>% 
+    dplyr::mutate(x_dif = avg.x_end.5 / avg.x_start.5,
+                  y_dif = avg.y_end.5 / avg.y_start.5) 
+  
+  data_cut = data_cut %>% 
+    dplyr::mutate(log.x.dif = log(x_dif), 
+                  log.y.dif = log(y_dif)
+                  ) %>% 
+    dplyr::filter(!is.na(log.x.dif) & !is.na(log.y.dif))
+  
+  # Fix how model runs later
+  #lm = lm(log.y.dif ~ log.x.dif, data = data_cut)
+  
+  #lm.coef = round(as.data.frame(coef(lm))[2,1],digits = 3)
+  head(data)
+  merge_set <- data %>% 
+    dplyr::select(1,7,8,9) %>% 
+    distinct(.)
+  head(merge_set)
+  data_cut_facet <- left_join(data_cut,merge_set, by = "Area") %>% 
+    dplyr::filter(!is.na(HDI) & HDI != "N/A")
+  
+  
+  plot <- ggplot(data = data_cut_facet, mapping = aes(x = log.x.dif, y = log.y.dif)) + theme_classic() +
+    geom_point(size = 3, alpha = .3) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+    geom_smooth(method = "lm")  + geom_text(aes(label = Area), size = 2, alpha = .7) +
+    labs(x = x.lab, y = y.lab, title = paste(as.character(start),"to",as.character(end), "n = ", as.character(nrow(data_cut)))) + 
+    theme(legend.position = "bottom")+ ylim(-2.5,1) + xlim(-1.5,1)
+  # plot.coef <- ggplot(data = data_cut, mapping = aes(x = log.x.dif, y = log.y.dif)) + theme_classic() +
+  # geom_point() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + geom_smooth(method = "lm")  + labs(x = x.lab, y = y.lab, title = paste(as.character(start),"to",as.character(end), "n = ", as.character(nrow(data_cut)), "coef =", as.character(lm.coef)) )
+  
+  plot <- plot + 
+    {if(!is.na(facet)) facet_wrap(facet)
+    }
+  
+  return(plot)
+  # if_else(is.na(lm.coef), return(plot), return(plot.coef))
+} 
 ```
+
+## JC Project 4/26
+Ben's list of things to do for Journal club prior to meeting on 4/29
+
+1. Generate new datasets for crop subsets
+2. Generate full corrplot for relevant responses
+3. Summarize Models for 1995-2015 on interactive effects of Nitrogen, Exp/Imp, and Pesticide use on area changes
+4. Re-examine Z-level Factors non-transformed
+ 
+
+### 1. Generate new datasets for crop subsets
+
+#### Goal: Have datasets available where we can examine effects on only a subset of staple crops, i.e. those primarily GM in certain countries
+From what I've seen, the main 4 GM crops grown globally are soybean, cotton, maize, and canola, and since canola isn't one of those staple crops I'm going to create a few datasets looking at the other 3 together and individuallly.
+
+Big disclaimer here is that "cotton" is actually "Seed cotton" aka calories from cottonseed oil, so that may be unrepresentative when it comes to actual cotton production or yield calculations.
+
+```{r GM data, include = F}
+#OG Dataset
+fao_updated_staple = read.csv("../data/fao_updated_staple.csv", header = T, sep = ",")
+fao_updated_staple$HDI  <- factor(fao_updated_staple$HDI, levels = c("Low", "Medium", "High", "Very high"))
+merge_set <- read.csv("../data/mergeset.csv", sep = ",", header = T)
+
+#kcal and Pop data for reference
+kcal_data <- read.csv("../data/kcal_staple.csv", sep = ",", header = T)
+pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T) %>% 
+  dplyr::mutate(Population = Value*1000) %>% 
+  dplyr::select(Area,Population,Year)
+names(pop_data) <- as.character(names(pop_data))
+
+# soybeans
+soy_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Area.Code < 1000) %>% 
+  dplyr::filter(Item == "Soybeans") %>% 
+  dplyr::filter(Element != "Production") 
+names(soy_data) = gsub(pattern = "Y", replacement = "", x = names(soy_data))
+soy_data_clean <- soy_data
+soy_area_tall <- pivot_longer(data = soy_data_clean %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area.harv")%>%
+  dplyr::select(Area, Item, Year,area.harv)
+soy_area_tall$Year <- as.numeric(soy_area_tall$Year)
+head(soy_area_tall)
+
+soy_yield_tall <- pivot_longer(data = soy_data_clean %>% filter(Element == "Yield"),cols = 8:66, names_to = "Year", values_to = "yield") 
+soy_yield_tall$Year <- as.numeric(soy_yield_tall$Year)
+soy_yield_full <- left_join(soy_yield_tall,kcal_data %>% dplyr::select(Item,kcal.hg)) %>% 
+  dplyr::mutate(kcal.ha.avg = yield*kcal.hg) %>% 
+  dplyr::select(Area, Item, Year,kcal.ha.avg) %>% 
+  dplyr::filter(!is.na(kcal.ha.avg))
+
+soy_full <- left_join(soy_area_tall,soy_yield_full) %>% 
+  left_join(.,pop_data) %>% 
+  left_join(.,merge_set)
+write.csv(soy_full,"../data/soy_data.csv")
+
+# maize
+maize_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Area.Code < 1000) %>% 
+  dplyr::filter(Item == "Maize") %>% 
+  dplyr::filter(Element != "Production") 
+names(maize_data) = gsub(pattern = "Y", replacement = "", x = names(maize_data))
+maize_data_clean <- maize_data
+maize_area_tall <- pivot_longer(data = maize_data_clean %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area.harv")%>%
+  dplyr::select(Area, Item, Year,area.harv)
+maize_area_tall$Year <- as.numeric(maize_area_tall$Year)
+head(maize_area_tall)
+
+maize_yield_tall <- pivot_longer(data = maize_data_clean %>% filter(Element == "Yield"),cols = 8:66, names_to = "Year", values_to = "yield") 
+maize_yield_tall$Year <- as.numeric(maize_yield_tall$Year)
+maize_yield_full <- left_join(maize_yield_tall,kcal_data %>% dplyr::select(Item,kcal.hg)) %>% 
+  dplyr::mutate(kcal.ha.avg = yield*kcal.hg) %>% 
+  dplyr::select(Area, Item, Year,kcal.ha.avg) %>% 
+  dplyr::filter(!is.na(kcal.ha.avg))
+
+maize_full <- left_join(maize_area_tall,maize_yield_full) %>% 
+  left_join(.,pop_data)%>% 
+  left_join(.,merge_set)
+write.csv(maize_full,"../data/maize_data.csv")
+
+# cotton
+cotton_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Area.Code < 1000) %>% 
+  dplyr::filter(Item == "Seed cotton") %>% 
+  dplyr::filter(Element != "Production") 
+names(cotton_data) = gsub(pattern = "Y", replacement = "", x = names(cotton_data))
+cotton_data_clean <- cotton_data
+cotton_area_tall <- pivot_longer(data = cotton_data_clean %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area.harv")%>%
+  dplyr::select(Area, Item, Year,area.harv)
+cotton_area_tall$Year <- as.numeric(cotton_area_tall$Year)
+head(cotton_area_tall)
+
+cotton_yield_tall <- pivot_longer(data = cotton_data_clean %>% filter(Element == "Yield"),cols = 8:66, names_to = "Year", values_to = "yield") 
+cotton_yield_tall$Year <- as.numeric(cotton_yield_tall$Year)
+cotton_yield_full <- left_join(cotton_yield_tall,kcal_data %>% dplyr::select(Item,kcal.hg)) %>% 
+  dplyr::mutate(kcal.ha.avg = yield*kcal.hg) %>% 
+  dplyr::select(Area, Item, Year,kcal.ha.avg) %>% 
+  dplyr::filter(!is.na(kcal.ha.avg))
+
+cotton_full <- left_join(cotton_area_tall,cotton_yield_full) %>% 
+  left_join(.,pop_data)%>% 
+  left_join(.,merge_set)
+write.csv(cotton_full,"../data/cotton_data.csv")
+
+# GM3 (all three)
+GM3_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Area.Code < 1000) %>% 
+  dplyr::filter(Item == "Seed cotton"|Item =="Soybeans"|Item == "Maize") %>% 
+  dplyr::filter(Element != "Production") 
+names(GM3_data) = gsub(pattern = "Y", replacement = "", x = names(GM3_data))
+GM3_data_clean <- GM3_data
+GM3_area_tall <- pivot_longer(data = GM3_data_clean %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area.harv")%>%
+  dplyr::select(Area, Item, Year,area.harv)
+GM3_area_tall$Year <- as.numeric(GM3_area_tall$Year)
+head(GM3_area_tall)
+
+GM3_yield_tall <- pivot_longer(data = GM3_data_clean %>% filter(Element == "Yield"),cols = 8:66, names_to = "Year", values_to = "yield") 
+GM3_yield_tall$Year <- as.numeric(GM3_yield_tall$Year)
+GM3_yield_full <- left_join(GM3_yield_tall,kcal_data %>% dplyr::select(Item,kcal.hg)) %>% 
+  dplyr::mutate(kcal.per.ha = yield*kcal.hg) %>% 
+  dplyr::select(Area, Item, Year,kcal.per.ha) %>% 
+  dplyr::filter(!is.na(kcal.per.ha))
+
+GM3_full <- left_join(GM3_area_tall,GM3_yield_full) %>% 
+  left_join(.,pop_data)%>% 
+  left_join(.,merge_set)
+
+GM3_full_summed <- GM3_full %>% 
+  mutate(kcal.total = area.harv*kcal.per.ha) %>% 
+  group_by(Area,Year) %>% 
+  dplyr::summarise(kcal.produced.tot = sum(kcal.total,na.rm = T),
+                   area.tot = sum(area.harv,na.rm = T)) %>% 
+  mutate(kcal.ha.avg = kcal.produced.tot / area.tot) %>% 
+  dplyr::select(-kcal.produced.tot)
+
+write.csv(GM3_full,"../data/GM3_data.csv")
+```
+
+Not shown here, but have datasets now available that have each of the three individually and combined for analysis. 
+
+Quick example, lets look at the 1979-1999 and 1995-2015 Ewers relationships if it was ONLY SOYBEANS!
+(made another new little function, only other change is "area.tot" is now "area.harv")
+
+#### Just Soy 
+
+```{r}
+soy1 <- ewers_plot_avg_commod(data = soy_full %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+                   X = "kcal.ha.avg",
+                   Y = "area.harv",
+                   start = 1979,
+                   end = 1999) 
+soy2 <- ewers_plot_avg_commod(data = soy_full %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+                   X = "kcal.ha.avg",
+                   Y = "area.harv",
+                   start = 1995,
+                   end = 2015)
+ggarrange(soy1,soy2, common.legend = T)
+```
+
+Interesting but unsurprising that individual commodities dont follow global trends!
+
+## 2. Generate full corrplot for relevant responses
+Looking first at untransformed values here.
+
+#### 1995
+
+```{r 1995}
+corrplot(cor(drop_na(fao_updated_staple %>% filter(Year == 1995) %>% 
+               dplyr::select(3,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports))))
+
+```
+
+
+#### 2015
+
+```{r}
+corrplot(cor(drop_na(fao_updated_staple %>% filter(Year == 2015) %>% 
+               dplyr::select(3,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports))))
+```
+
+
+
+#### 1995 per capita
+
+Below two plots are raw values / Population 
+
+```{r}
+corrplot(cor(drop_na(fao_updated_staple %>% filter(Year == 1995) %>% 
+               dplyr::select(3,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports) %>% 
+              dplyr::mutate(tonnes_nitrogen.pc = tonnes_nitrogen/Population,
+                            CO2_eq_emissions.pc = CO2_eq_emissions/Population,
+                            tonnes_pest_total.pc = tonnes_pest_total/Population,
+                            kcal.ha.avg.pc = kcal.ha.avg/Population,
+                            mean.staple.exports.pc = mean.staple.exports/Population,
+                            mean.staple.imports.pc = mean.staple.imports/Population) %>% 
+                dplyr::select(-2:-7))))
+```
+
+#### 2015 per capita
+
+```{r}
+corrplot(cor(drop_na(fao_updated_staple %>% filter(Year == 2015) %>% 
+               dplyr::select(3,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports) %>% 
+              dplyr::mutate(tonnes_nitrogen.pc = tonnes_nitrogen/Population,
+                            CO2_eq_emissions.pc = CO2_eq_emissions/Population,
+                            tonnes_pest_total.pc = tonnes_pest_total/Population,
+                            kcal.ha.avg.pc = kcal.ha.avg/Population,
+                            mean.staple.exports.pc = mean.staple.exports/Population,
+                            mean.staple.imports.pc = mean.staple.imports/Population) %>% 
+                dplyr::select(-2:-7))))
+```
+
+## 3. Summarize All Existing Models for 1995-2015 on interactive effects of Nitrogen, Exp/Imp, and Pesticide use on area changes
 
 ### Figure 1: Per capita change in area used to grow and yield of 23 staple crops
 
@@ -575,7 +647,8 @@ JCfig_1
 
 These models represent effects of "kcal.ha.avg" (yield metric) on area used to grow staple crops
 #### Model Summaries
-```{r Figure 1 models, echo = F}
+
+```{r, include = F}
 ewers_79_99_data <- ewers_plot_avg_data_noZ(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
                                         X = "kcal.ha.avg",
                                         Y = "area.tot",
@@ -587,9 +660,14 @@ ewers_95_15_data <- ewers_plot_avg_data_noZ(data = fao_updated_staple %>% filter
                                             Y = "area.tot",
                                             start = 1995,
                                             end = 2015)
-    # Old Ewers Model
+```
+
+
+```{r Figure 1 models}
+
+    # Old Ewers Model (Area Change ~ Yield Change 1979-1999)
 Anova(lm(log.y.dif ~ log.x.dif, data = ewers_79_99_data))
-    # New Ewers Model
+    # New Ewers Model (Area Change ~ Yield Change 1995-2015)
 Anova(lm(log.y.dif ~ log.x.dif, data = ewers_95_15_data))
 ```
 
@@ -625,14 +703,14 @@ First Figure is a recreation of the Ewers style plots, with change in nitrogen u
 
 
 ```{r Nitrogen Data gen and plots, echo = F}
-data79_99_nitro <- ewers_plot_avg_data_Znpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+data79_99_nitro <- ewers_plot_avg_data_Zpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
                                          X = "kcal.ha.avg",
                                          Y = "area.tot",
                                          Z = "tonnes_nitrogen",
                                          start = 1979,
                                          end = 1999)
 
-data95_15_nitro <- ewers_plot_avg_data_Znpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+data95_15_nitro <- ewers_plot_avg_data_Zpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
                                          X = "kcal.ha.avg",
                                          Y = "area.tot",
                                          Z = "tonnes_nitrogen",
@@ -665,10 +743,234 @@ tidy(lm(log.y.dif ~ log.x.dif*log.z.dif, data = data79_99_nitro))
 tidy(lm(log.y.dif ~ log.x.dif*log.z.dif, data = data95_15_nitro))
 ```
 
+### Area Changes ~ Nitrogen Use 1995-2015
+
+```{r, echo = F}
+nitro_on_area_95_15 <- ggplot(data = data95_15_nitro, mapping = aes(x = log.z.dif, y = log.y.dif)) + theme_classic() +
+  geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_smooth(method = "lm", alpha = .2)  + geom_text(aes(label = Area), size = 3, alpha = .3)+
+  labs(x = "Change in Nitrogen Applied in Agriculture", y = "Change in Area for Staple Crop Production") +
+  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom")
+nitro_on_area_95_15
+Anova(lm(log.y.dif ~ log.z.dif, data = data95_15_nitro))
+```
+
+#### Same again Split by HDI this time
+
+```{r, echo = F}
+nitro_on_area_95_15_HDI <- ggplot(data = data95_15_nitro, mapping = aes(x = log.z.dif, y = log.y.dif)) + theme_classic() +
+  geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_smooth(method = "lm", alpha = .2)  + 
+  labs(x = "Change in Nitrogen Applied in Agriculture", y = "Change in Area for Staple Crop Production") + geom_text(aes(label = Area), size = 3, alpha = .3)+
+  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom") +
+  facet_wrap(~HDI)
+nitro_on_area_95_15_HDI
+Anova(lm(log.y.dif ~ log.z.dif*HDI, data = data95_15_nitro))
+```
+
+### Imports and Exports 
+
+#### Exports
+
+```{r Exp Data and First Ewers, echo = F}
+data79_99_exp <- ewers_plot_avg_data_Zpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+                                     X = "kcal.ha.avg",
+                                     Y = "area.tot",
+                                     Z = "mean.staple.exports",
+                                     start = 1979,
+                                     end = 1999)
+
+data95_15_exp <- ewers_plot_avg_data_Zpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+                                     X = "kcal.ha.avg",
+                                     Y = "area.tot",
+                                     Z = "mean.staple.exports",
+                                     start = 1995,
+                                     end = 2015)
+
+# Plots and models
+early_exports <- ewers_plot_avg_Zpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+               X = "kcal.ha.avg",
+               Y = "area.tot",
+               Z = "mean.staple.exports",
+               start = 1979,
+               end = 1999)
+
+recent_exports <- ewers_plot_avg_Zpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+               X = "kcal.ha.avg",
+               Y = "area.tot",
+               Z = "mean.staple.exports",
+               start = 1995,
+               end = 2015)
+
+ggarrange(early_exports,recent_exports, nrow =1, common.legend = T)
+```
+
+^^^ Lots of missing values above
+
+Analysis
+
+```{r Exp Analyses}
+# 1979-1999 Area ~ Yield * Exports
+tidy(lm(log.y.dif ~ log.x.dif*log.z.dif, data = data79_99_exp))
+
+# 1995-2015 Area ~ Yield * Exports
+tidy(lm(log.y.dif ~ log.x.dif*log.z.dif, data = data95_15_exp))
+```
+
+#### Imports
+
+```{r, echo = F}
+data79_99_imp <- ewers_plot_avg_data_Zpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+                                     X = "kcal.ha.avg",
+                                     Y = "area.tot",
+                                     Z = "mean.staple.imports",
+                                     start = 1979,
+                                     end = 1999)
+
+data95_15_imp <- ewers_plot_avg_data_Zpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+                                     X = "kcal.ha.avg",
+                                     Y = "area.tot",
+                                     Z = "mean.staple.imports",
+                                     start = 1995,
+                                     end = 2015)
+
+early_imp <- ewers_plot_avg_Zpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+               X = "kcal.ha.avg",
+               Y = "area.tot",
+               Z = "mean.staple.imports",
+               start = 1979,
+               end = 1999)
 
 
+recent_imp <- ewers_plot_avg_Zpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+               X = "kcal.ha.avg",
+               Y = "area.tot",
+               Z = "mean.staple.imports",
+               start = 1995,
+               end = 2015)
+
+ggarrange(early_imp,recent_imp, nrow =1, common.legend = T)
+```
+
+```{r Imp analyses}
+
+# 1979-1999 Area ~ Yield * Imports
+tidy(lm(log.y.dif ~ log.x.dif*log.z.dif, data = data79_99_imp))
+
+# 1995-2015 Area ~ Yield * Imports
+tidy(lm(log.y.dif ~ log.x.dif*log.z.dif, data = data95_15_imp))
+```
+
+#### Area Changes ~ Exports/Imports 1995-2015
+
+```{r solo Exp/Imp Plots, echo = F}
+exp_on_area_95_15 <- ggplot(data = data95_15_exp, mapping = aes(x = log.z.dif, y = log.y.dif)) + theme_classic() +
+  geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_smooth(method = "lm", alpha = .2)  + geom_text(aes(label = Area), size = 3, alpha = .3)+
+  labs(x = "Change in Value of Staple Crop Exports", y = "Change in Area for Staple Crop Production") +
+  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom")
+
+imp_on_area_95_15 <- ggplot(data = data95_15_imp, mapping = aes(x = log.z.dif, y = log.y.dif)) + theme_classic() +
+  geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_smooth(method = "lm", alpha = .2)  + geom_text(aes(label = Area), size = 3, alpha = .3)+
+  labs(x = "Change in Value of Staple Crop imports", y = "Change in Area for Staple Crop Production") +
+  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom")
+
+ggarrange(exp_on_area_95_15,imp_on_area_95_15,nrow = 1)
+```
+
+```{r Solo Exp Imp analyses}
+# 1995-2015 Area Change ~ Change in Exports
+tidy(lm(log.y.dif ~ log.z.dif, data = data95_15_exp))
+
+# 1995-2015 Area Change ~ Change in Imports
+tidy(lm(log.y.dif ~ log.z.dif, data = data95_15_imp))
+
+```
+
+#### Export/Import Split by HDI
+
+```{r, echo = F}
+exp_on_area_95_15_HDI <- ggplot(data = data95_15_exp, mapping = aes(x = log.z.dif, y = log.y.dif)) + theme_classic() +
+  geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_smooth(method = "lm", alpha = .2)  + 
+  labs(x = "Change in Value of Staple Crop Exports", y = "Change in Area for Staple Crop Production") +geom_text(aes(label = Area), size = 3, alpha = .3)+
+  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom") +
+  facet_wrap(~HDI)
+
+imp_on_area_95_15_HDI <- ggplot(data = data95_15_imp, mapping = aes(x = log.z.dif, y = log.y.dif)) + theme_classic() +
+  geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_smooth(method = "lm", alpha = .2)  + 
+  labs(x = "Change in Value of Staple Crop imports", y = "Change in Area for Staple Crop Production") +geom_text(aes(label = Area), size = 3, alpha = .3)+
+  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom") +
+  facet_wrap(~HDI)
+
+ggarrange(exp_on_area_95_15_HDI,imp_on_area_95_15_HDI, nrow = 1)
+```
+Analyses
+
+```{r}
+# 1995-2015 Area Change ~ Change in Exports * HDI
+Anova(lm(log.y.dif ~ log.z.dif*HDI, data = data95_15_exp))
+
+# 1995-2015 Area Change ~ Change in Imports * HDI
+Anova(lm(log.y.dif ~ log.z.dif*HDI, data = data95_15_imp))
+```
+
+## 4. Examine Z factors non-transformed
+
+This is now looking at some plots and figures without the Z level responses (i.e. nitrogen) scaled to per-capita. These still represent log(late/early) values to reflect change over time, they values are just not adjusted to population for each region. This may be a bit useless in the long run, but might help us identify some of the biggest changes in practices.
+
+#### 
+```{r, echo = F}
+unscaled_nitro <- ewers_plot_avg_data_Znpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+               X = "kcal.ha.avg",
+               Y = "area.tot",
+               Z = "tonnes_nitrogen",
+               start = 1995,
+               end = 2015)
+unscaled_exports <- ewers_plot_avg_data_Znpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+               X = "kcal.ha.avg",
+               Y = "area.tot",
+               Z = "mean.staple.exports",
+               start = 1995,
+               end = 2015)
+unscaled_imports <- ewers_plot_avg_data_Znpc(data = fao_updated_staple %>% filter(Area != "Brunei Darussalam", Area != "Maldives"), 
+               X = "kcal.ha.avg",
+               Y = "area.tot",
+               Z = "mean.staple.imports",
+               start = 1995,
+               end = 2015)
+
+ggplot(data = unscaled_nitro, mapping = aes(x = log.z.dif, y = log.y.dif, color = HDI)) + theme_classic() +
+  geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_smooth(aes(color = NA),method = "lm", alpha = .2)  + geom_text(aes(label = Area), size = 3, alpha = .3)+
+  labs(x = "Change in Nitrogen Additions (unscaled)", y = "Change in Area for Staple Crop Production") +
+  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom")
 
 
+ggplot(data = unscaled_exports, mapping = aes(x = log.z.dif, y = log.y.dif, color = HDI)) + theme_classic() +
+  geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_smooth(aes(color = NA),method = "lm", alpha = .2)  + geom_text(aes(label = Area), size = 3, alpha = .3)+
+  labs(x = "Change in Value of Staple Crop Exports (unscaled)", y = "Change in Area for Staple Crop Production") +
+  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom")
 
+ggplot(data = unscaled_imports, mapping = aes(x = log.z.dif, y = log.y.dif, color = HDI)) + theme_classic() +
+  geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+  geom_smooth(aes(color = NA),method = "lm", alpha = .2)  + geom_text(aes(label = Area), size = 3, alpha = .3)+
+  labs(x = "Change in Value of Staple Crop Imports(unscaled)", y = "Change in Area for Staple Crop Production") +
+  scale_color_viridis_d(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom")
+```
+```{r}
+# 1995-2015 Area Change ~ Change in Nitrogen Applied (tonnes unscaled) * HDI
+Anova(lm(log.y.dif ~ log.z.dif*HDI, data = unscaled_nitro))
 
+# 1995-2015 Area Change ~ Change in Exports (unscaled) * HDI
+Anova(lm(log.y.dif ~ log.z.dif*HDI, data = unscaled_exports))
+
+# 1995-2015 Area Change ~ Change in Imports (unscaled) * HDI
+Anova(lm(log.y.dif ~ log.z.dif*HDI, data = unscaled_imports))
+```
+
+At first glance there doesn't really seem to be that much of a difference with or without scaling (given the ratio is log transformed) so we may want to look into another way of investigating this. Instead of the ration (late/early) we could simply look at one time points completely raw or log-transformed values for correlations with change in area (i.e. only the countries with the most tonnes of nitrogen added had changes to area).
 
