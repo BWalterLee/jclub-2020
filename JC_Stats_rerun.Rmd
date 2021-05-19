@@ -1,0 +1,53 @@
+---
+title: "JC_Stats_rerun"
+author: "Ben"
+date: "5/10/2021"
+output: html_document
+---
+
+```{r packages, include = F}
+library(tidyverse)
+library(car)
+library(ggpubr)
+library(kableExtra)
+library(corrplot)
+library(broom)
+```
+
+
+The goal of this document is to re-run data organization and analyses completely and transparently, independent of all the goofy functions I've written, so that our analysis process can be easily reviewed and verified.
+
+I'm going to begin with the importation of raw data from FAO, and generate the change-over-time metrics independently for each figure and analysis.
+
+As we discussed in our last meeting, the primary points I am trying to examine/test are:
+
+1. Land sparing trends from 1970s - 1990s were not present in the last 20 years
+
+2. Over the last 20 years, countries with increased nitrogen inputs were less likely to have reduced the area in staple crop production.
+
+3. 95-’15 all countries have increased exports of staple crops, with the biggest increases in exports positively correlated with increases in staple crop land areas
+
+4. High and very high HDI countries have shown the greatest increase in land use, yield, exports, and nitrogen use.
+
+5. Globally there has been a reduction in total staple crop land 
+
+## Data Importation and Cleaning
+```{r FAO Data Importation}
+# Importing and filtering staple crops from FAO Ag Production Data
+staple_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Area.Code < 1000) %>% 
+  dplyr::filter(Item =="Apples"| Item == "Barley"| Item ==  "Bananas"| Item == "Cassava"| Item == "Coconuts"| Item ==  "Seed cotton"| 
+                  Item ==  "Grapes"| Item ==  "Maize"| Item ==  "Millet"| Item == "Oats"| Item ==  "Onions, dry"| Item ==  "Oil palm fruit"| 
+                  Item ==  "Plantains"| Item ==  "Potatoes"| Item ==  "Rice, paddy"| Item ==  "Sorghum"| 
+                  Item == "Soybeans"| Item ==  "Sugar beet"| Item ==  "Sugar cane"| Item ==  "Sunflower seed"| Item ==  "Sweet potatoes"| 
+                  Item ==  "Vegetables, fresh nes"| Item == "Wheat"| Item ==  "Yams") %>% 
+  dplyr::filter(Element != "Production") 
+names(staple_data) = gsub(pattern = "Y", replacement = "", x = names(staple_data))
+staple_data_clean <- staple_data
+area.tall <- pivot_longer(data = staple_data_clean %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area")%>% 
+  dplyr::select(Area, Item, Year,area)
+area.tall$Year <- as.numeric(area.tall$Year)
+head(area.tall)
+
+
+```

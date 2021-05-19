@@ -52,7 +52,7 @@ names(pop_data) <- as.character(names(pop_data))
 pop_data_clean <- pop_data
 
 # Data Split by Staple
-split_data <- left_join(area.tall,kcal.ha)  # THE PROBLEM IS HERE SOMEWHERE. CREATING NA FOR NO REASON.
+split_data <- left_join(area.tall,kcal.ha)  
 str(kcal.ha)
 View(split_data)
 # Summed by Year 
@@ -157,9 +157,6 @@ staple_exports_raw <- read.csv("../data/fao_staple_export_value.csv", sep = ",",
   dplyr::group_by(Area,Year) %>% 
   dplyr::summarise(mean.staple.exports = mean(staple.export.value, na.rm = T))
 
-# Daily Kcal per-capita food availability WRONG!!!!!!!!!!!!!! VARIABILITY NOT VALUE!!!!!!!!!  
-kcal_percap_daily  <- read.csv("../data/food-supply-kcal.csv", sep = ",", header = T) %>% 
-  dplyr::filter(Code != "")
   
 
 fao_staple_complete <- left_join(pop_data_clean,nitrogen_data) %>% 
@@ -170,7 +167,6 @@ fao_staple_complete <- left_join(pop_data_clean,nitrogen_data) %>%
   left_join(.,pest_total_data) %>% 
   left_join(.,for_invest_data) %>% 
   left_join(.,emissions_data) %>% 
-  left_join(.,kcal_percap_daily) %>% 
   left_join(.,mergeset)
 View(fao_staple_complete)
 

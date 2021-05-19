@@ -580,7 +580,7 @@ Looking first at untransformed values here.
 
 ```{r 1995}
 corrplot(cor(drop_na(fao_updated_staple %>% filter(Year == 1995) %>% 
-               dplyr::select(3,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports))))
+               dplyr::select(3,area.tot,tonnes_nitrogen,CO2_eq_emissions,tonnes_pest_total,kcal.ha.avg,mean.staple.exports,mean.staple.imports))))
 
 ```
 
@@ -604,7 +604,7 @@ corrplot(cor(drop_na(fao_updated_staple %>% filter(Year == 1995) %>%
               dplyr::mutate(tonnes_nitrogen.pc = tonnes_nitrogen/Population,
                             CO2_eq_emissions.pc = CO2_eq_emissions/Population,
                             tonnes_pest_total.pc = tonnes_pest_total/Population,
-                            kcal.ha.avg.pc = kcal.ha.avg/Population,
+                            kcal.ha.avg1 = kcal.ha.avg,
                             mean.staple.exports.pc = mean.staple.exports/Population,
                             mean.staple.imports.pc = mean.staple.imports/Population) %>% 
                 dplyr::select(-2:-7))))
@@ -618,7 +618,7 @@ corrplot(cor(drop_na(fao_updated_staple %>% filter(Year == 2015) %>%
               dplyr::mutate(tonnes_nitrogen.pc = tonnes_nitrogen/Population,
                             CO2_eq_emissions.pc = CO2_eq_emissions/Population,
                             tonnes_pest_total.pc = tonnes_pest_total/Population,
-                            kcal.ha.avg.pc = kcal.ha.avg/Population,
+                            kcal.ha.avg1 = kcal.ha.avg,
                             mean.staple.exports.pc = mean.staple.exports/Population,
                             mean.staple.imports.pc = mean.staple.imports/Population) %>% 
                 dplyr::select(-2:-7))))
@@ -856,6 +856,7 @@ ggarrange(early_imp,recent_imp, nrow =1, common.legend = T)
 
 # 1979-1999 Area ~ Yield * Imports
 tidy(lm(log.y.dif ~ log.x.dif*log.z.dif, data = data79_99_imp))
+
 
 # 1995-2015 Area ~ Yield * Imports
 tidy(lm(log.y.dif ~ log.x.dif*log.z.dif, data = data95_15_imp))

@@ -1,0 +1,498 @@
+---
+title: "JC_Stats_rerun"
+author: "Ben"
+date: "5/10/2021"
+output: html_document
+---
+
+```{r packages, include = F}
+library(tidyverse)
+library(car)
+library(ggpubr)
+library(kableExtra)
+library(corrplot)
+library(broom)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(fig.width=10, fig.height=6) 
+```
+
+
+The goal of this document is to re-run data organization and analyses completely and transparently, independent of all the goofy functions I've written, so that our analysis process can be easily reviewed and verified.
+
+I'm going to begin with the importation of raw data from FAO, and generate the change-over-time metrics independently for each figure and analysis.
+
+As we discussed in our last meeting, the primary points I am trying to examine/test are:
+
+### Statements
+
+1. Land sparing trends from 1970s - 1990s were not present in the last 20 years
+
+2. Over the last 20 years, countries with increased nitrogen inputs were less likely to have reduced the area in staple crop production.
+
+3. 95-’15 all countries have increased exports of staple crops, with the biggest increases in exports positively correlated with increases in staple crop land areas
+
+4. High and very high HDI countries have shown the greatest increase in land use, yield, exports, and nitrogen use.
+
+5. Globally there has been a reduction in total staple crop land 
+
+## Data Importation and Cleaning
+```{r FAO Data Importation}
+# Importing and filtering staple crops from FAO Ag Production Data
+staple_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Area.Code < 1000, Area !="Maldives", Area !="China") %>% 
+  dplyr::filter(Item =="Apples"| Item == "Barley"| Item ==  "Bananas"| Item == "Cassava"| Item == "Coconuts"| 
+                  Item ==  "Seed cotton"| Item ==  "Grapes"| Item ==  "Maize"| Item ==  "Millet"| Item == "Oats"| 
+                  Item ==  "Onions, dry"| Item ==  "Oil palm fruit"| 
+                  Item ==  "Plantains"| Item ==  "Potatoes"| Item ==  "Rice, paddy"| Item ==  "Sorghum"| 
+                  Item == "Soybeans"| Item ==  "Sugar beet"| Item ==  "Sugar cane"| Item ==  "Sunflower seed"| 
+                  Item ==  "Sweet potatoes"| Item ==  "Vegetables, fresh nes"| Item == "Wheat"| Item ==  "Yams") %>% 
+  dplyr::filter(Element != "Production") 
+
+# Renaming Year Columns
+names(staple_data) = gsub(pattern = "Y", replacement = "", x = names(staple_data))
+staple_data_clean <- staple_data
+
+# Pivoting to Tall Format and selecting Area data
+area.tall <- pivot_longer(data = staple_data_clean %>% filter(Element == "Area harvested"),cols = 8:66, names_to = "Year", values_to = "area")%>% 
+  dplyr::select(Area, Item, Year,area)
+area.tall$Year <- as.numeric(area.tall$Year)
+
+
+# Pivoting to Tall Format and selecting Yield data
+yield.tall <- pivot_longer(data = staple_data_clean %>% filter(Element == "Yield"),cols = 8:66, names_to = "Year", values_to = "yield") 
+yield.tall$Year <- as.numeric(yield.tall$Year)
+
+# Importing Kcal/hg data 
+kcal <- read.csv("../data/kcal_staple.csv", header = T, sep = ",")
+
+# Joining Kcal to Yield Data and converting to kcal per hectare
+kcal.ha <- left_join(yield.tall,kcal %>% dplyr::select(Item,kcal.hg)) %>% 
+  dplyr::mutate(kcal.per.ha = yield*kcal.hg) %>% 
+  dplyr::select(Area, Item, Year,kcal.per.ha) %>% 
+  dplyr::filter(!is.na(kcal.per.ha))
+
+# Importing Population Data and cleaning
+pop_data <- read.csv("../data/fao_pop.csv", sep = ",", header = T) %>% 
+  dplyr::mutate(Population = Value*1000) %>% 
+  dplyr::select(Area,Population,Year)
+names(pop_data) <- as.character(names(pop_data))
+pop_data_clean <- pop_data
+
+# Combining area and yield for all staple crops, generating kcal/hectare averages for each year
+area_yield_data <- left_join(area.tall,kcal.ha) %>% 
+  mutate(kcal.total = area*kcal.per.ha) %>% 
+  group_by(Area,Year) %>% 
+  dplyr::summarise(kcal.produced.tot = sum(kcal.total,na.rm = T),
+                   area.tot = sum(area,na.rm = T)) %>% 
+  mutate(kcal.ha.avg = kcal.produced.tot / area.tot) %>% 
+  dplyr::select(-kcal.produced.tot)
+
+# Importing Additional Values
+# Nutrient Nitrogen (N) for Agricultural Use in tonnes
+nitrogen_data <- read.csv("../data/fao_nitrogen.csv", sep = ",", header = T) %>% 
+  dplyr::mutate(tonnes_nitrogen = Value) %>% 
+  dplyr::select(Area,tonnes_nitrogen,Year)
+
+# Value of Agricultural Products Imports in 1000 US$
+staple_imports_raw <- read.csv("../data/fao_staple_import_value.csv", sep = ",", header = T) %>% 
+  dplyr::mutate(staple.import.value = Value) %>% 
+  dplyr::select(Area,Item,Year,staple.import.value) %>% 
+  dplyr::group_by(Area,Year) %>% 
+  dplyr::summarise(mean.staple.imports = mean(staple.import.value, na.rm = T))
+
+# Value of Agricultural Products Exports in 1000 US$
+staple_exports_raw <- read.csv("../data/fao_staple_export_value.csv", sep = ",", header = T) %>% 
+  dplyr::mutate(staple.export.value = Value) %>% 
+  dplyr::select(Area,Item,Year,staple.export.value) %>% 
+  dplyr::group_by(Area,Year) %>% 
+  dplyr::summarise(mean.staple.exports = mean(staple.export.value, na.rm = T))
+
+# Value of Staple Crop Production in Gross Production Value (constant 2014-2016 1000 I$, index)
+staple_production_value <- read.csv("../data/Value_of_Production_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Area.Code < 1000, 
+                Element == "Gross Production Value (constant 2014-2016 thousand I$)") %>% 
+  dplyr::filter(Item =="Apples"| Item == "Barley"| Item ==  "Bananas"| Item == "Cassava"| Item == "Coconuts"| 
+                  Item ==  "Seed cotton"| Item ==  "Grapes"| Item ==  "Maize"| Item ==  "Millet"| Item == "Oats"|
+                  Item ==  "Onions, dry"|
+                  Item ==  "Oil palm fruit"| 
+                  Item ==  "Plantains"| Item ==  "Potatoes"| Item ==  "Rice, paddy"| Item ==  "Sorghum"| 
+                  Item == "Soybeans"| Item ==  "Sugar beet"| Item ==  "Sugar cane"| Item ==  "Sunflower seed"| 
+                  Item ==  "Sweet potatoes"| 
+                  Item ==  "Vegetables, fresh nes"| Item == "Wheat"| Item ==  "Yams") %>% 
+  dplyr::filter(Element != "Production") 
+names(staple_production_value) = gsub(pattern = "Y", replacement = "", x = names(staple_data))
+staple_value_clean <- staple_production_value
+staple_value_tall <- pivot_longer(data = staple_value_clean,cols = 8:66, names_to = "Year", 
+                                  values_to = "staple.value")%>% 
+  dplyr::select(Area, Item, Year,staple.value)
+staple_value_tall$Year <- as.numeric(staple_value_tall$Year)
+
+staple_value_complete <- staple_value_tall %>% 
+  dplyr::group_by(Area, Year) %>% 
+  dplyr::summarise(mean.staple.value = mean(staple.value, na.rm = T))
+
+# Total Pesticides Used in Agriculture in tonnes
+pest_total_data <- read.csv("../data/fao_pest_total.csv", sep = ",", header =T)%>% 
+  dplyr::mutate(tonnes_pest_total = Value) %>% 
+  dplyr::select(Area,tonnes_pest_total,Year)
+
+# Value of Foreign Direct Investment (FDI) in Agriculture, Forestry, and Fishing in millions US$
+for_invest_data <- read.csv("../data/fao_foreign_invest.csv", sep = ",", header =T)%>% 
+  dplyr::mutate(for_invest_usd = Value) %>% 
+  dplyr::select(Area,for_invest_usd,Year)
+
+# Total CO2eq emissions in gigagrams (Total, not just Agriculture)
+emissions_data <- read.csv("../data/fao_emissions.csv", sep = ",", header =T)%>% 
+  dplyr::mutate(CO2_eq_emissions = Value) %>% 
+  dplyr::select(Area,CO2_eq_emissions,Year)
+
+# UN HDI Classification Data
+mergeset <- read.csv("../data/mergeset.csv", sep = ",", header = T)
+
+# Compile into single data frame
+fao_staple_complete <- left_join(pop_data_clean,nitrogen_data) %>% 
+  left_join(.,staple_imports_raw) %>% 
+  left_join(.,staple_exports_raw) %>% 
+  left_join(.,staple_value_complete) %>% 
+  left_join(.,area_yield_data) %>% 
+  left_join(.,pest_total_data) %>% 
+  left_join(.,for_invest_data) %>% 
+  left_join(.,emissions_data) %>% 
+  left_join(.,mergeset) %>% 
+  dplyr::select(-(19:25))
+
+write.csv(fao_staple_complete, "../data/fao_updated_staple.csv")
+```
+### Full Dataset
+```{r table broken, include = F}
+#kable(fao_staple_complete, "html") %>%
+#    kable_styling() %>%
+#    scroll_box(
+#       height = 4,
+#      width = 6.5,
+#      box_css = "border: 1px solid #ddd; padding: 5px; ",
+#  extra_css = NULL,
+#  fixed_thead = TRUE
+#
+```
+
+
+## 1. Land sparing trends from 1970s - 1990s were not present in the last 20 years
+
+This is the repeat of our classic Ewers methodology comparing their results to present times. Our main change to the methodology here is that we average 2 years on either side of the "target" year, resulting in a 5 year average from that period. That strikes me as more representative of actual trends than the Ewers method, though none of the findings have been substantially changed, so if we decide it would be better to perfectly mirror Ewers that should still be fine.
+
+Before this is completely final, we should discuss/I can look into methods for compiling or excluding certain countries from the former USSR or those below some threshold of cropland area.
+
+First up is the conversion of area and yield responses to log(change)
+
+```{r Area and Yield Data Generation for 1979-1999 and 1995-2015}
+Area_Yield_Change_79_99 = fao_staple_complete %>% 
+    # dplyr::filter(export_value_usd >= 200000) %>%  # Filter Countries here if wanted later
+    dplyr::select(Area,Year,Population,kcal.ha.avg,area.tot) %>%    # 
+    dplyr::filter(!is.na(kcal.ha.avg) & !is.na(area.tot))%>%   # 
+    dplyr::filter(between(Year,(1979-2),(1979+2))|between(Year,(1999-2),(1999+2))) %>%           
+    dplyr::mutate(yield_percap = kcal.ha.avg, area_percap = area.tot/Population, # Removed Per-capita
+                  time = if_else(Year <= (1979+2) & Year >= (1979-2),"start.5","end.5"))%>% 
+    dplyr::select(Area,time,yield_percap,area_percap) %>% 
+    dplyr::group_by(Area,time) %>% 
+    dplyr::summarize(avg.yield = mean(yield_percap,na.rm = T),avg.area = mean(area_percap,na.rm = T))%>% 
+    pivot_wider(names_from = time, values_from = c(avg.yield,avg.area))  %>% 
+    dplyr::mutate(yield_dif = avg.yield_end.5 / avg.yield_start.5,
+                  area_dif = avg.area_end.5 / avg.area_start.5) %>% 
+    dplyr::mutate(log.yield.dif = log(yield_dif), 
+                  log.area.dif = log(area_dif)) %>% 
+    dplyr::filter(!is.na(log.yield.dif) & !is.na(log.area.dif))
+
+# Add HDI data back into dataset
+Area_Yield_Change_79_99 <- left_join(Area_Yield_Change_79_99,mergeset %>% dplyr::select(1,2,4,5,7))
+
+# 1995-2015
+Area_Yield_Change_95_15 = fao_staple_complete %>% 
+    # dplyr::filter(export_value_usd >= 200000) %>%  # Filter Countries here if wanted later
+    dplyr::select(Area,Year,Population,kcal.ha.avg,area.tot) %>%    # 
+    dplyr::filter(!is.na(kcal.ha.avg) & !is.na(area.tot)) %>%   # 
+    dplyr::filter(between(Year,(1995-2),(1995+2))|between(Year,(2015-2),(2015+2))) %>%           
+    dplyr::mutate(yield_percap = kcal.ha.avg, area_percap = area.tot/Population, # Removed Per-capita
+                  time = if_else(Year <= (1995+2) & Year >= (1995-2),"start.5","end.5"))%>% 
+    dplyr::select(Area,time,yield_percap,area_percap) %>% 
+    dplyr::group_by(Area,time) %>% 
+    dplyr::summarize(avg.yield = mean(yield_percap,na.rm = T),avg.area = mean(area_percap,na.rm = T))%>% 
+    pivot_wider(names_from = time, values_from = c(avg.yield,avg.area))  %>% 
+    dplyr::mutate(yield_dif = avg.yield_end.5 / avg.yield_start.5,
+                  area_dif = avg.area_end.5 / avg.area_start.5) %>% 
+    dplyr::mutate(log.yield.dif = log(yield_dif), 
+                  log.area.dif = log(area_dif)) %>% 
+    dplyr::filter(!is.na(log.yield.dif) & !is.na(log.area.dif))
+
+# Add HDI data back into dataset
+Area_Yield_Change_95_15 <- left_join(Area_Yield_Change_95_15,mergeset %>% dplyr::select(1,2,4,5,7))
+
+```
+These data sets serve as the base for a lot of our work, so here is the place to start if we're making changes to examine specific crops, this can be where that happens. 
+
+#### Plots comparing Area and Yield Changes over time 
+```{r Ewers style comparison plots}
+ewersplot_79_99 <- ggplot(data = Area_Yield_Change_79_99, mapping = aes(x = log.yield.dif, y = log.area.dif)) +
+  theme_classic() + geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+    geom_smooth(method = "lm")  + 
+    labs(x = "Log Change in Yield (kcal/ha)" , y = "Log Change in Area (ha)", 
+         title = paste("'79 to '99 Changes in Yield and Area of 23 Staple Crops", 
+                       "n = ", as.character(nrow(Area_Yield_Change_79_99)))) + 
+    theme(legend.position = "bottom")+ ylim(-2.5,1) + xlim(-1.5,1)
+
+ewersplot_95_15 <- ggplot(data = Area_Yield_Change_95_15, mapping = aes(x = log.yield.dif, y = log.area.dif)) +
+  theme_classic() + geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+    geom_smooth(method = "lm")  + 
+    labs(x = "Log Change in Yield (kcal/ha)" , y = "Log Change in Area (ha)", 
+         title = paste("'95 to '15 Changes in Yield and Area of 23 Staple Crops", 
+                       "n = ", as.character(nrow(Area_Yield_Change_95_15)))) + 
+    theme(legend.position = "bottom")+ ylim(-2.5,1) + xlim(-1.5,1)
+
+ggarrange(ewersplot_79_99,ewersplot_95_15)
+```
+#### Analyses 
+
+```{r}
+# 79-99 Linear Model
+summary(lm(log.area.dif ~ log.yield.dif, data = Area_Yield_Change_79_99))
+
+# 95-15 Linear Model
+summary(lm(log.area.dif ~ log.yield.dif, data = Area_Yield_Change_95_15))
+
+
+```
+
+To me, this sufficiently summarizes our first point, "Land sparing trends from 1970s - 1990s were not present in the last 20 years". The minor follow-up to this in my mind is that these trends differed by HDI, which led us to focus on other responses, so that is shown below.
+
+#### Area and Yield Changes over time HDI Faceted  
+```{r Ewers HDI facet}
+Area_Yield_Change_79_99$HDI <- factor(Area_Yield_Change_79_99$HDI, levels = c("Low", "Medium", "High", "Very high"))
+Area_Yield_Change_95_15$HDI <- factor(Area_Yield_Change_95_15$HDI, levels = c("Low", "Medium", "High", "Very high"))
+
+ewersplot_79_99_HDI <- ggplot(data = Area_Yield_Change_79_99 %>% dplyr::filter(!is.na(HDI)),
+                              mapping = aes(x = log.yield.dif, y = log.area.dif)) +
+  theme_classic() + geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+    geom_smooth(method = "lm")  + 
+    labs(x = "Log Change in Yield (kcal/ha)" , y = "Log Change in Area (ha)", 
+         title = paste("'79 to '99 Changes in Yield and Area of 23 Staple Crops", 
+                       "n = ", as.character(nrow(Area_Yield_Change_79_99)))) + 
+    theme(legend.position = "bottom")+ ylim(-2.5,1) + xlim(-1.5,1)+facet_wrap(~HDI)
+
+ewersplot_95_15_HDI <- ggplot(data = Area_Yield_Change_95_15 %>% dplyr::filter(!is.na(HDI)),
+                              mapping = aes(x = log.yield.dif, y = log.area.dif)) +
+  theme_classic() + geom_point(size = 3, alpha = .75) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+    geom_smooth(method = "lm")  + 
+    labs(x = "Log Change in Yield (kcal/ha)" , y = "Log Change in Area (ha)", 
+         title = paste("'95 to '15 Changes in Yield and Area of 23 Staple Crops", 
+                       "n = ", as.character(nrow(Area_Yield_Change_95_15)))) + 
+    theme(legend.position = "bottom")+ ylim(-2.5,1) + xlim(-1.5,1)+facet_wrap(~HDI)
+
+ggarrange(ewersplot_79_99_HDI,ewersplot_95_15_HDI)
+```
+#### Analysis
+
+```{r}
+# 1979-1999
+Anova(lm(log.area.dif ~ log.yield.dif*HDI, data = Area_Yield_Change_79_99))
+
+# 1995-2015 
+Anova(lm(log.area.dif ~ log.yield.dif*HDI, data = Area_Yield_Change_95_15))
+```
+The significance of both changes in yield and HDI on changes in area used to grow staple crops points us to our next questions, where we investigate individual factors that might produce such effects.
+
+## 2. Over the last 20 years, countries with increased nitrogen inputs were less likely to have reduced the area in staple crop production.
+
+Re-running the data generation process here for just nitrogen and only for 1995-2015. 
+
+```{r Nitrogen Data 95-15}
+nitrogen_Change_95_15 = fao_staple_complete %>% 
+    # dplyr::filter(export_value_usd >= 200000) %>%  # Filter Countries here if wanted later
+    dplyr::select(Area,Year,Population,tonnes_nitrogen) %>%    # 
+    dplyr::filter(!is.na(tonnes_nitrogen)) %>%   # 
+    dplyr::filter(between(Year,(1995-2),(1995+2))|between(Year,(2015-2),(2015+2))) %>%           
+    dplyr::mutate(nitrogen_percap = tonnes_nitrogen/Population,
+                  time = if_else(Year <= (1995+2) & Year >= (1995-2),"start.5","end.5"))%>% 
+    dplyr::select(Area,time,nitrogen_percap) %>% 
+    dplyr::group_by(Area,time) %>% 
+    dplyr::summarize(avg.nitrogen = mean(nitrogen_percap,na.rm = T))%>% 
+    pivot_wider(names_from = time, values_from = c(avg.nitrogen)) %>% 
+    dplyr::mutate(nitrogen_dif = end.5 / start.5
+                  ) %>% 
+    dplyr::mutate(log.nitrogen.dif = log(nitrogen_dif) 
+                  ) %>% 
+    dplyr::filter(!is.na(log.nitrogen.dif)) %>% 
+    dplyr::select(-end.5,-start.5)
+
+# Joining to previous data
+Sparing_Nitro_95_15 <- left_join(Area_Yield_Change_95_15, nitrogen_Change_95_15)
+Sparing_Nitro_95_15$HDI <- factor(Sparing_Nitro_95_15$HDI, levels = c("Low", "Medium", "High", "Very high"))
+```
+#### Z axis style figure including nitrogen change
+
+```{r Area ~ Yield + Nitro plot}
+
+ggplot(data = Sparing_Nitro_95_15, mapping = aes(x = log.yield.dif,
+                                                 y = log.area.dif, 
+                                                 color = log.nitrogen.dif)) + theme_classic() +
+    geom_point(size = 2, alpha = .5) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+    geom_smooth(method = "lm")  + geom_text(aes(label = Area), size = 2, alpha = .7) +
+    labs(x = "Log Change in Yield (kcal/ha)" , y = "Log Change in Area (ha)", 
+         title = paste("'95 to '15 Changes in Yield and Area of 23 Staple Crops", 
+                       "n = ", as.character(nrow(Sparing_Nitro_95_15))), color = "Log Change in per-capita nitrogen addition (tonnes)") +
+    scale_color_viridis_c(begin = 0.2,end = .9,option = "inferno", na.value = "grey50") + theme(legend.position = "bottom")
+```
+Interaction Analysis
+```{r Area ~ Yield*Nitro analysis}
+tidy(lm(log.area.dif ~ log.yield.dif*log.nitrogen.dif, data = Sparing_Nitro_95_15))
+```
+
+This provides some evidence that countries that increased per-capita staple crop caloric yields and nitrogen additions were less able to decrease per-capita area used to grown staple crops, though the majority of countries did reduce area.
+
+
+#### Main Effect of Nitrogen on Area Plot 
+
+```{r}
+ggplot(data = Sparing_Nitro_95_15, mapping = aes(x = log.nitrogen.dif,
+                                                 y = log.area.dif)) + theme_classic() +
+    geom_point(size = 2, alpha = .5) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+    geom_smooth(method = "lm")  + geom_text(aes(label = Area), size = 2, alpha = .7) +
+    labs(y = "Log Change in Area (ha)" , 
+         title = paste("'95 to '15 Changes in Nitrogen and Area of 23 Staple Crops", 
+                       "n = ", as.character(nrow(Sparing_Nitro_95_15))), x = "Log Change in per-capita nitrogen addition (tonnes)")
+```
+Main Effect Analysis
+```{r}
+tidy(lm(log.area.dif ~ log.nitrogen.dif, data = Sparing_Nitro_95_15))
+```
+
+This shows this main effect of nitrogen on area change is also strong, but we also wanted to see if this effect varies by HDI of countries.
+
+#### Effects of change in Nitrogen and HDI on change in Area used to grow staple crops
+
+```{r}
+ggplot(data = Sparing_Nitro_95_15 %>% filter(!is.na(HDI)), mapping = aes(x = log.nitrogen.dif,
+                                                 y = log.area.dif)) + theme_classic() +
+    geom_point(size = 2, alpha = .5) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+    geom_smooth(method = "lm")  + geom_text(aes(label = Area), size = 2, alpha = .7) +
+    labs(y = "Log Change in Area (ha)" , 
+         title = paste("'95 to '15 Changes in Nitrogen and Area of 23 Staple Crops", 
+                       "n = ", as.character(nrow(Sparing_Nitro_95_15))), x = "Log Change in per-capita nitrogen addition (tonnes)")+ facet_wrap(~HDI)
+
+Anova(lm(log.area.dif ~ log.nitrogen.dif*HDI, data = Sparing_Nitro_95_15))
+```
+This supports part of statement 4, as countries with high HDIs appear to have a more positive relationship between changes in nitrogen addition and changes in staple crop area. 
+
+## 3. 95-’15 all countries have increased exports of staple crops, with the biggest increases in exports positively correlated with increases in staple crop land areas
+
+First step is to generate 95-15 changes in exports (and imports, in case) data.
+
+In working on this however, I found that our original conclusion was incorrect. It is not true that all countries have increased exports of staple crops, my original script was removing outliers that were over 10x the average per-capita change in exports or imports and the massive value differences were cutting countries from both ends. As shown below, there are some pretty huge swings for certain important countries in both directions. Some of the biggest offenders are countries with precarious political situations (Cuba, North Korea, Eritrea, etc) so those are prime for removal. The vast majority of countries are increasing exports still though, but I've left all countries in for this initial analysis. 
+
+#### Main Effect of change in Export Value of staple crops on change in area for staple crops 95-15
+
+```{r}
+Export_import_Change_95_15 = fao_staple_complete %>% 
+    dplyr::select(Area,Year,Population,mean.staple.exports,mean.staple.imports) %>%    # 
+    dplyr::filter(!is.na(mean.staple.exports) & !is.na(mean.staple.imports),
+                  mean.staple.exports != 0, mean.staple.imports != 0) %>%   # 
+    dplyr::filter(between(Year,(1995-2),(1995+2))|between(Year,(2015-2),(2015+2))) %>%           
+    dplyr::mutate(export_percap = mean.staple.exports/Population, import_percap = mean.staple.imports/Population,
+                  time = if_else(Year <= (1995+2) & Year >= (1995-2),"start.5","end.5"))%>% 
+    dplyr::select(Area,time,export_percap,import_percap) %>% 
+    dplyr::group_by(Area,time) %>% 
+    dplyr::summarize(avg.export = mean(export_percap,na.rm = T),avg.import = mean(import_percap,na.rm = T))%>% 
+    pivot_wider(names_from = time, values_from = c(avg.export,avg.import))  %>% 
+    dplyr::mutate(export_dif = avg.export_end.5 / avg.export_start.5,
+                  import_dif = avg.import_end.5 / avg.import_start.5) %>% 
+  dplyr::mutate(log.export.dif = log(export_dif), 
+                  log.import.dif = log(import_dif)) %>% 
+    dplyr::filter(!is.na(log.export.dif) & !is.na(log.import.dif)) %>% 
+  dplyr::select(1,6,7,8,9)
+
+Sparing_exp_imp_unrestricted_95_15 <- left_join(Area_Yield_Change_95_15,Export_import_Change_95_15)
+
+ggplot(data = Sparing_exp_imp_unrestricted_95_15, mapping = aes(x = log.export.dif,
+                                                 y = log.area.dif)) + theme_classic() +
+    geom_point(size = 2, alpha = .5) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+    geom_smooth(method = "lm")  + geom_text(aes(label = Area), size = 2, alpha = .7) +
+    labs(y = "Log Change in Area (ha)" , 
+         title = paste("'95 to '15 Changes in Export Value and Area of 23 Staple Crops", 
+                       "n = ", as.character(nrow(Sparing_Nitro_95_15))), x = "Log Change in per-capita Staple Crop Export Value (USD)")
+
+```
+
+```{r exports imports remove outliers}
+tidy(lm(log.area.dif ~ log.export.dif, data = Sparing_exp_imp_unrestricted_95_15))
+```
+
+We do still observe a positive main effect of changes to value of exports across the board. 
+
+#### Effects of change in Exports and HDI on changes for Area for staple crops
+
+```{r}
+ggplot(data = Sparing_exp_imp_unrestricted_95_15 %>% filter(!is.na(HDI)), mapping = aes(x = log.export.dif,
+                                                 y = log.area.dif)) + theme_classic() +
+    geom_point(size = 2, alpha = .5) + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) + 
+    geom_smooth(method = "lm")  + geom_text(aes(label = Area), size = 2, alpha = .7) +
+    labs(y = "Log Change in Area (ha)" , 
+         title = paste("'95 to '15 Changes in Export Value and Area of 23 Staple Crops", 
+                       "n = ", as.character(nrow(Sparing_Nitro_95_15))), x = "Log Change in per-capita Staple Crop Export Value (USD)")+ facet_wrap(~HDI)
+
+Anova(lm(log.area.dif ~ log.export.dif*HDI, data = Sparing_exp_imp_unrestricted_95_15))
+```
+HDI appears to increase this relationship as well. Again though, I think it's important to recognize where different HDI countries land on each axis individually. For example, a big concentration of high and Very high HDI countries have increased exports over this period, which low and medium HDIs are evenly distributed.
+
+## 4. High and very high HDI countries have shown the greatest increase in land use, yield, exports, and nitrogen use.
+
+So no specific new code here given that this is reasonably well explored previously. If there are good ideas for how best to present this visually outside of faceted plots in supplementary, that would be excellent.
+
+## 5. Globally there has been a reduction in total staple crop land 
+
+Just wanted a general visualization for this, so slapped some boxplots. Showing that overall there have been reductions. 
+
+```{r}
+ggplot(data = Area_Yield_Change_95_15 %>% filter(!is.na(HDI)), mapping = aes(x = HDI, y = log.area.dif)) +
+  geom_boxplot(size = .75) + theme_classic() + geom_hline(aes(yintercept = 0))
+
+ggplot(data = Area_Yield_Change_95_15 %>% filter(!is.na(HDI)), mapping = aes(x = HDI, y = log.yield.dif)) +
+  geom_boxplot(size = .75) + theme_classic() + geom_hline(aes(yintercept = 0))
+
+```
+
+
+### New Comments for Ben to Address
+
+- Edited some models to include interaction
+- Really important to frame changes in exports well, many external factors involved
+  - Possible axis switch?
+- Statement 5 requires summing area changes over time to actually support our claim (new global change figure)
+
+- Big revisions post change to initial yield metric changes. 
+  - Verify trends for 1979-2019 global area and population data for staple and total
+  - Include 79-99 for key comparisons
+  - Figure ideas from Tobin in google doc
+  https://docs.google.com/document/d/1jLTC4r0EPGE2xOkRtXt3mMmFC3moIAMBCMIMUGJCprk/edit 
+  
+
+```{r Possible figure 2, include = F }
+area_summarized <- area.tall %>% 
+  group_by(Year) %>% 
+  dplyr::summarise(total.area = sum(area, na.rm = T))
+
+ggplot(data = area_summarized, aes(x= Year, y = total.area)) + geom_point()
+
+pop_sum <- pop_data_clean %>% 
+  group_by(Year) %>% 
+  dplyr::summarise(total.pop = sum(Population, na.rm = T))
+
+a_pop <- left_join(area_summarized,pop_sum) 
+a_pop_pc <- a_pop %>% 
+  dplyr::mutate(pc_area = total.area/total.pop)
+
+a <- ggplot(data = a_pop_pc, aes(x= Year, y = total.area)) + geom_point()
+b <- ggplot(data = a_pop_pc, aes(x= Year, y = total.pop)) + geom_point()
+c <- ggplot(data = a_pop_pc, aes(x= Year, y = pc_area)) + geom_point()
+
+ggarrange(a,b,c, nrow = 1)
+```
+
