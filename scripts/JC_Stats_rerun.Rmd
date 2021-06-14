@@ -16,6 +16,11 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 knitr::opts_chunk$set(fig.width=10, fig.height=6) 
 ```
 
+### UPDATE: 
+
+Having identified an important issue with our calculation of Yield (unnecessarily scaled to population), some of the narrative in no longer correct. Our first statement is no longer as absolute, as sparing trends have not "flipped" but have still dampened.
+
+
 
 The goal of this document is to re-run data organization and analyses completely and transparently, independent of all the goofy functions I've written, so that our analysis process can be easily reviewed and verified.
 
@@ -26,6 +31,7 @@ As we discussed in our last meeting, the primary points I am trying to examine/t
 ### Statements
 
 1. Land sparing trends from 1970s - 1990s were not present in the last 20 years
+      - This has now changed based on fixing 
 
 2. Over the last 20 years, countries with increased nitrogen inputs were less likely to have reduced the area in staple crop production.
 
@@ -43,7 +49,7 @@ staple_data <- read.csv("../data/Production_Crops_E_All_Data_NOFLAG.csv", sep = 
   dplyr::filter(Item =="Apples"| Item == "Barley"| Item ==  "Bananas"| Item == "Cassava"| Item == "Coconuts"| 
                   Item ==  "Seed cotton"| Item ==  "Grapes"| Item ==  "Maize"| Item ==  "Millet"| Item == "Oats"| 
                   Item ==  "Onions, dry"| Item ==  "Oil palm fruit"| 
-                  Item ==  "Plantains"| Item ==  "Potatoes"| Item ==  "Rice, paddy"| Item ==  "Sorghum"| 
+                  Item ==  "Plantains and others"| Item ==  "Potatoes"| Item ==  "Rice, paddy"| Item ==  "Sorghum"| 
                   Item == "Soybeans"| Item ==  "Sugar beet"| Item ==  "Sugar cane"| Item ==  "Sunflower seed"| 
                   Item ==  "Sweet potatoes"| Item ==  "Vegetables, fresh nes"| Item == "Wheat"| Item ==  "Yams") %>% 
   dplyr::filter(Element != "Production") 
@@ -90,11 +96,13 @@ area_yield_data <- left_join(area.tall,kcal.ha) %>%
 # Importing Additional Values
 # Nutrient Nitrogen (N) for Agricultural Use in tonnes
 nitrogen_data <- read.csv("../data/fao_nitrogen.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Area !="China") %>% 
   dplyr::mutate(tonnes_nitrogen = Value) %>% 
   dplyr::select(Area,tonnes_nitrogen,Year)
 
 # Value of Agricultural Products Imports in 1000 US$
 staple_imports_raw <- read.csv("../data/fao_staple_import_value.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Area !="China") %>% 
   dplyr::mutate(staple.import.value = Value) %>% 
   dplyr::select(Area,Item,Year,staple.import.value) %>% 
   dplyr::group_by(Area,Year) %>% 
@@ -102,6 +110,7 @@ staple_imports_raw <- read.csv("../data/fao_staple_import_value.csv", sep = ",",
 
 # Value of Agricultural Products Exports in 1000 US$
 staple_exports_raw <- read.csv("../data/fao_staple_export_value.csv", sep = ",", header = T) %>% 
+  dplyr::filter(Area !="China") %>% 
   dplyr::mutate(staple.export.value = Value) %>% 
   dplyr::select(Area,Item,Year,staple.export.value) %>% 
   dplyr::group_by(Area,Year) %>% 
@@ -109,13 +118,13 @@ staple_exports_raw <- read.csv("../data/fao_staple_export_value.csv", sep = ",",
 
 # Value of Staple Crop Production in Gross Production Value (constant 2014-2016 1000 I$, index)
 staple_production_value <- read.csv("../data/Value_of_Production_E_All_Data_NOFLAG.csv", sep = ",", header = T) %>% 
-  dplyr::filter(Area.Code < 1000, 
+  dplyr::filter(Area.Code < 1000, Area !="China",
                 Element == "Gross Production Value (constant 2014-2016 thousand I$)") %>% 
   dplyr::filter(Item =="Apples"| Item == "Barley"| Item ==  "Bananas"| Item == "Cassava"| Item == "Coconuts"| 
                   Item ==  "Seed cotton"| Item ==  "Grapes"| Item ==  "Maize"| Item ==  "Millet"| Item == "Oats"|
                   Item ==  "Onions, dry"|
                   Item ==  "Oil palm fruit"| 
-                  Item ==  "Plantains"| Item ==  "Potatoes"| Item ==  "Rice, paddy"| Item ==  "Sorghum"| 
+                  Item ==  "Plantains and others"| Item ==  "Potatoes"| Item ==  "Rice, paddy"| Item ==  "Sorghum"| 
                   Item == "Soybeans"| Item ==  "Sugar beet"| Item ==  "Sugar cane"| Item ==  "Sunflower seed"| 
                   Item ==  "Sweet potatoes"| 
                   Item ==  "Vegetables, fresh nes"| Item == "Wheat"| Item ==  "Yams") %>% 
@@ -133,16 +142,19 @@ staple_value_complete <- staple_value_tall %>%
 
 # Total Pesticides Used in Agriculture in tonnes
 pest_total_data <- read.csv("../data/fao_pest_total.csv", sep = ",", header =T)%>% 
+  dplyr::filter(Area !="China") %>% 
   dplyr::mutate(tonnes_pest_total = Value) %>% 
   dplyr::select(Area,tonnes_pest_total,Year)
 
 # Value of Foreign Direct Investment (FDI) in Agriculture, Forestry, and Fishing in millions US$
 for_invest_data <- read.csv("../data/fao_foreign_invest.csv", sep = ",", header =T)%>% 
+  dplyr::filter(Area !="China") %>% 
   dplyr::mutate(for_invest_usd = Value) %>% 
   dplyr::select(Area,for_invest_usd,Year)
 
 # Total CO2eq emissions in gigagrams (Total, not just Agriculture)
 emissions_data <- read.csv("../data/fao_emissions.csv", sep = ",", header =T)%>% 
+  dplyr::filter(Area !="China") %>% 
   dplyr::mutate(CO2_eq_emissions = Value) %>% 
   dplyr::select(Area,CO2_eq_emissions,Year)
 
