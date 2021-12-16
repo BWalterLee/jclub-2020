@@ -333,7 +333,7 @@ nitrogen_Change_95_15 = fao_staple_complete %>%
     dplyr::mutate(log.nitrogen.dif = log(nitrogen_dif) 
                   ) %>% 
     dplyr::filter(!is.na(log.nitrogen.dif)) %>% 
-    dplyr::select(-end.5,-start.5)
+    dplyr::select(-end.5,-start.5) 
 
 # Joining to previous data
 Sparing_Nitro_95_15 <- left_join(Area_Yield_Change_95_15, nitrogen_Change_95_15)

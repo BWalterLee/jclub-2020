@@ -72,6 +72,23 @@ Area_Yield_Change_95_15 <- left_join(Area_Yield_Change_95_15,mergeset %>% dplyr:
 Area_Yield_Change_95_15$HDI <- factor(Area_Yield_Change_95_15$HDI, levels = c("Low", "Medium", "High", "Very high"))
 ```
 
+#### Quick ANOVA for development level differences
+```{r ANOVA for Area Change}
+head(Area_Yield_Change_95_15)
+
+t.test(Area_Yield_Change_95_15$log.area.dif)
+t.test(Area_Yield_Change_95_15$log.yield.dif)
+
+
+summary(aov(log.area.dif ~ HDI, data = Area_Yield_Change_95_15))
+TukeyHSD(aov(log.area.dif ~ HDI, data = Area_Yield_Change_95_15))
+
+summary(aov(log.yield.dif ~ HDI, data = Area_Yield_Change_95_15))
+TukeyHSD(aov(log.yield.dif ~ HDI, data = Area_Yield_Change_95_15))
+Anova(aov(log.yield.dif ~ HDI, data = Area_Yield_Change_95_15))
+```
+
+
 ```{r Fig 1 Boxplots, fig.width=8, fig.height=10}
 bp_area <- ggplot(data = Area_Yield_Change_95_15 %>% filter(!is.na(HDI), HDI != "N/A"), mapping = aes(x = HDI, y = log.area.dif)) +
   geom_boxplot(size = .75) + theme_classic() + geom_hline(aes(yintercept = 0)) + geom_text(aes(label = Area), size = 2, position = position_jitter(width = .3))+ labs(y = str_wrap("Log Change in per-capita Area for Staple Crop Production", width = 25))
